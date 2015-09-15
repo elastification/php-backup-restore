@@ -1,0 +1,35 @@
+{
+  "name": "elastification/php-backup-restore",
+  "type": "library",
+  "description": "This tool should support you for giving the opportunity to backup you data to the file system.",
+  "keywords": ["elasticsearch", "backup", "restore", "filesystem"],
+  "homepage": "http://www.elastification.de",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Daniel Wendlandt",
+      "email": "dan.wendlandt@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=5.5.0",
+    "guzzlehttp/guzzle": ">=6.0,<7.0",
+    "elastification/php-client": ">=0.9,<1.0",
+    "symfony/console": "~2.7"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "~4.1"
+  },
+  "autoload": {
+    "psr-4": { "Elastification\\BackupRestore\\": "src/" }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Elastification\\BackupRestore\\Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "bin-dir": "bin"
+  },
+  "minimum-stability": "stable"
+}

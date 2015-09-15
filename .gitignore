@@ -1,0 +1,9 @@
+/phpunit.xml
+/composer.phar
+/vendor/
+/build/
+artifacts/
+/bin/
+!/bin/.gitkeep
+/docs
+/cache
