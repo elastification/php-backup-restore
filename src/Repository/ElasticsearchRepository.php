@@ -8,6 +8,7 @@
 namespace Elastification\BackupRestore\Repository;
 
 use Elastification\BackupRestore\Entity\IndexTypeStats;
+use Elastification\BackupRestore\Entity\Mappings;
 use Elastification\BackupRestore\Entity\ServerInfo;
 use Elastification\BackupRestore\Helper\VersionHelper;
 use Elastification\BackupRestore\Repository\ElasticQuery\QueryInterface;
@@ -49,7 +50,7 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
     }
 
     /**
-     * Checks for number documents in all indeces/types
+     * Checks for number documents in all indices/types
      *
      * @param string $host
      * @param int $port
@@ -94,6 +95,45 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
         return $indexTypeStats;
     }
 
+    /**
+     * Get mappings for all indices
+     *
+     * @param string $host
+     * @param int $port
+     * @return Mappings
+     * @throws \Exception
+     * @author Daniel Wendlandt
+     */
+    public function getAllMappings($host, $port = 9200)
+    {
+        $this->checkServerInfo($host, $port);
+
+        $requestClassName = $this->getRequestClass('Index\\GetMappingRequest');
+        $request = new $requestClassName(null, null, $this->getSerializer());
+
+        $client = $this->getClient($host, $port);
+
+        $response = $client->send($request);
+
+        $mappings = new Mappings();
+        foreach($response->getData() as $indexName => $typeMappings) {
+            $index = new Mappings\Index();
+            $index->setName($indexName);
+
+            foreach($typeMappings['mappings'] as $typeName => $schema) {
+                $type = new Mappings\Type();
+                $type->setName($typeName);
+                $type->setSchema($schema);
+
+                $index->addType($type);
+            }
+
+            $mappings->addIndices($index);
+        }
+
+        return $mappings;
+    }
+
     private function checkServerInfo($host, $port = 9200)
     {
         if(null === $this->serverInfo) {
@@ -105,6 +145,13 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
         }
     }
 
+    /**
+     * Generates a fully qualified classname for queries of elastification
+     *
+     * @param string $className
+     * @return string
+     * @author Daniel Wendlandt
+     */
     private function getQueryClass($className)
     {
         $namespace = 'Elastification\\BackupRestore\\Repository\\ElasticQuery\\V%sx\\%s';
@@ -112,6 +159,13 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
         return $this->generateClassName($namespace, $className);
     }
 
+    /**
+     * Generates a fully qualified classname for requests of elastification
+     *
+     * @param string $className
+     * @return string
+     * @author Daniel Wendlandt
+     */
     private function getRequestClass($className)
     {
         $namespace = 'Elastification\\Client\\Request\\V%sx\\%s';
@@ -119,6 +173,14 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
         return $this->generateClassName($namespace, $className);
     }
 
+    /**
+     * Generates a class with correct version path and namespace
+     *
+     * @param string $namespace
+     * @param string $className
+     * @return string
+     * @author Daniel Wendlandt
+     */
     private function generateClassName($namespace, $className)
     {
         $version = explode('.', $this->serverInfo->version);

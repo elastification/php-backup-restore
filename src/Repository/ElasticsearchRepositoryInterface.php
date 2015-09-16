@@ -7,6 +7,8 @@
  */
 namespace Elastification\BackupRestore\Repository;
 
+use Elastification\BackupRestore\Entity\IndexTypeStats;
+use Elastification\BackupRestore\Entity\Mappings;
 use Elastification\BackupRestore\Entity\ServerInfo;
 
 interface ElasticsearchRepositoryInterface
@@ -32,5 +34,16 @@ interface ElasticsearchRepositoryInterface
      * @author Daniel Wendlandt
      */
     public function getDocCountByIndexType($host, $port = 9200);
+
+    /**
+     * Get mappings for all indices
+     *
+     * @param string $host
+     * @param int $port
+     * @return Mappings
+     * @throws \Exception
+     * @author Daniel Wendlandt
+     */
+    public function getAllMappings($host, $port = 9200);
 }
 

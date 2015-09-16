@@ -77,7 +77,8 @@ class BackupRunCommand extends Command
         }
 
         //var_dump($serverInfo);
-        $elastic->getDocCountByIndexType($host, $port);
+//        var_dump($elastic->getDocCountByIndexType($host, $port));
+        var_dump($elastic->getAllMappings($host, $port));
 
 
         //$output->writeln('jeppa backup');
