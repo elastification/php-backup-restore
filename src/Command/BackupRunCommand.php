@@ -8,6 +8,7 @@
 
 namespace Elastification\BackupRestore\Command;
 
+use Elastification\BackupRestore\BusinessCase\BackupBusinessCase;
 use Elastification\BackupRestore\Helper\VersionHelper;
 use Elastification\BackupRestore\Repository\ElasticsearchRepository;
 use Symfony\Component\Console\Command\Command;
@@ -69,18 +70,24 @@ class BackupRunCommand extends Command
         $this->checkOptions($host, $type, $target);
 
         //get server info
-        $elastic = new ElasticsearchRepository();
-        $serverInfo = $elastic->getServerInfo($host, $port);
-
-        if(!VersionHelper::isVersionAllowed($serverInfo->version)) {
-            throw new \Exception('Elasticsearch version ' . $serverInfo->version . ' is not supported by this tool');
-        }
+//        $elastic = new ElasticsearchRepository();
+//        $serverInfo = $elastic->getServerInfo($host, $port);
+//
+//        if(!VersionHelper::isVersionAllowed($serverInfo->version)) {
+//            throw new \Exception('Elasticsearch version ' . $serverInfo->version . ' is not supported by this tool');
+//        }
 
         //var_dump($serverInfo);
 //        var_dump($elastic->getDocCountByIndexType($host, $port));
-        var_dump($elastic->getAllMappings($host, $port));
+//        var_dump($elastic->getAllMappings($host, $port));
 
 
+        $backupBusinessCase = new BackupBusinessCase();
+        //todo apply indices for custom as fourth argument
+        $backupJob = $backupBusinessCase->createJob($target, $host, $port);
+
+        $backupBusinessCase->execute($backupJob);
+//        var_dump($backupJob->getPath());
         //$output->writeln('jeppa backup');
     }
 

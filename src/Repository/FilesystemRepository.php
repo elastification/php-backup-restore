@@ -17,11 +17,8 @@ use Elastification\Client\Request\V1x\SearchRequest;
 use Elastification\Client\Response\V1x\NodeInfoResponse;
 use Symfony\Component\Filesystem\Filesystem;
 
-class FilesystemRepository
+class FilesystemRepository implements FilesystemRepositoryInterface
 {
-    const DIR_META = 'meta';
-    const DIR_SCHEMA = 'schema';
-    const DIR_DATA = 'data';
 
     /**
      * @var Filesystem
@@ -46,12 +43,39 @@ class FilesystemRepository
 
     public function storeMappings($path, Mappings $mappings)
     {
+        $filesCreated = 0;
 
+        /** @var Mappings\Index $index */
+        foreach($mappings->getIndices() as $index) {
+            $indexFolderPath = $path . DIRECTORY_SEPARATOR . self::DIR_SCHEMA . DIRECTORY_SEPARATOR . $index->getName();
+            $this->filesytsem->mkdir($indexFolderPath);
+
+            /** @var Mappings\Type $type */
+            foreach($index->getTypes() as $type) {
+                $schemaPath = $indexFolderPath . DIRECTORY_SEPARATOR . $type->getName() . self::FILE_EXTENSION;
+
+                $this->filesytsem->dumpFile($schemaPath, json_encode($type->getSchema()));
+                $filesCreated++;
+            }
+        }
+
+        return $filesCreated;
     }
 
     public function storeDocument()
     {
 
+    }
+
+    public function symlinkLatestBackup($path)
+    {
+        $latestPath = dirname($path) . DIRECTORY_SEPARATOR . self::SYMLINK_LATEST;
+
+        if($this->filesytsem->exists($latestPath)) {
+            $this->filesytsem->remove($latestPath);
+        }
+
+        $this->filesytsem->symlink($path, $latestPath);
     }
 }
 
