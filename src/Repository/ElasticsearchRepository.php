@@ -14,7 +14,9 @@ use Elastification\BackupRestore\Helper\VersionHelper;
 use Elastification\BackupRestore\Repository\ElasticQuery\QueryInterface;
 use Elastification\Client\Request\V1x\NodeInfoRequest;
 use Elastification\Client\Request\V1x\SearchRequest;
+use Elastification\Client\Request\V1x\SearchScrollRequest;
 use Elastification\Client\Response\V1x\NodeInfoResponse;
+use Elastification\Client\Response\V1x\SearchResponse;
 
 class ElasticsearchRepository extends AbstractElasticsearchRepository implements ElasticsearchRepositoryInterface
 {
@@ -54,11 +56,12 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
      *
      * @param string $host
      * @param int $port
+     * @param int $numberOfIndices
      * @return IndexTypeStats
      * @throws \Exception
      * @author Daniel Wendlandt
      */
-    public function getDocCountByIndexType($host, $port = 9200)
+    public function getDocCountByIndexType($host, $port = 9200, $numberOfIndices = 100)
     {
         $this->checkServerInfo($host, $port);
         $queryClassName = $this->getQueryClass('DocsInIndexTypeQuery');
@@ -70,7 +73,7 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
 
         /** @var SearchRequest $request */
         $request = new $requestClassName(null, null, $this->getSerializer());
-        $request->setBody($query->getBody());
+        $request->setBody($query->getBody(array('size' => $numberOfIndices + 10)));
 
         $client = $this->getClient($host, $port);
         $response = $client->send($request);
@@ -134,6 +137,86 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
         return $mappings;
     }
 
+    /**
+     * Starts a scroll search without sorting.
+     * Size controls the number of results per shard
+     *
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-scroll.html
+     *
+     * @param string $index
+     * @param string $type
+     * @param string $host
+     * @param int $port
+     * @param string $scrollTimeUnit
+     * @param int $sizePerChart
+     * @return string
+     * @throws \Exception
+     * @author Daniel Wendlandt
+     */
+    public function createScrollSearch($index, $type, $host, $port = 9200, $scrollTimeUnit = '10m', $sizePerChart = 50)
+    {
+        $this->checkServerInfo($host, $port);
+
+        $query = array(
+            'query' => array(
+                'match_all' => array()
+            )
+        );
+
+        $requestClassName = $this->getRequestClass('SearchRequest');
+        /** @var SearchRequest $request */
+        $request = new $requestClassName($index, $type, $this->getSerializer());
+        $request->setParameter('scroll', $scrollTimeUnit);
+        $request->setParameter('size', $sizePerChart);
+        $request->setParameter('search_type', 'scan');
+        $request->setBody($query);
+
+        $client = $this->getClient($host, $port);
+
+        $response = $client->send($request);
+        $data = $response->getData()->getGatewayValue();
+
+        if(!isset($data['_scroll_id'])) {
+            throw new \Exception('Scroll id is not set in in response');
+        }
+
+        return $data['_scroll_id'];
+    }
+
+    /**
+     * Fetches data from started scroll search
+     *
+     * @param string $scrollId
+     * @param string $host
+     * @param int $port
+     * @param string $scrollTimeUnit
+     * @return array
+     * @author Daniel Wendlandt
+     */
+    public function getScrollSearchData($scrollId, $host, $port = 9200, $scrollTimeUnit = '10m')
+    {
+        $requestClassName = $this->getRequestClass('SearchScrollRequest');
+        /** @var SearchScrollRequest $request */
+        $request = new $requestClassName(null, null, $this->getSerializer());
+        $request->setScroll($scrollTimeUnit);
+        $request->setScrollId($scrollId);
+
+        $client = $this->getClient($host, $port);
+        /** @var SearchResponse $response */
+        $response = $client->send($request);
+
+        return $response->getHitsHits();
+    }
+
+    /**
+     * Checks if server info is set. If not it fetches the server info again.
+     * Also a verison check is done, if elasticsearch version is supported by this software
+     *
+     * @param string $host
+     * @param int $port
+     * @throws \Exception
+     * @author Daniel Wendlandt
+     */
     private function checkServerInfo($host, $port = 9200)
     {
         if(null === $this->serverInfo) {

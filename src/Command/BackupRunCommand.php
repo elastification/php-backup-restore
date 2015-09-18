@@ -86,7 +86,7 @@ class BackupRunCommand extends Command
         //todo apply indices for custom as fourth argument
         $backupJob = $backupBusinessCase->createJob($target, $host, $port);
 
-        $backupBusinessCase->execute($backupJob);
+        $backupBusinessCase->execute($backupJob, $output);
 //        var_dump($backupJob->getPath());
         //$output->writeln('jeppa backup');
     }

@@ -18,7 +18,7 @@ class DocsInIndexTypeQuery implements QueryInterface
      */
     public function getRawBody(array $values = array())
     {
-        return $this->createBody();
+        return $this->createBody($values);
     }
 
     /**
@@ -26,25 +26,26 @@ class DocsInIndexTypeQuery implements QueryInterface
      */
     public function getBody(array $values = array())
     {
-        return json_decode($this->createBody(), true);
+        return json_decode($this->createBody($values), true);
     }
 
     /**
      * Creates a json string of the the query body.
      *
+     * @param array $values
      * @return string
      * @author Daniel Wendlandt
      */
-    protected function createBody()
+    protected function createBody(array $values)
     {
         return '
             {
                 "aggs": {
                     "count_docs_in_index": {
-                        "terms" : { "field" : "_index" },
+                        "terms" : { "field" : "_index", "size": ' . (int) $values['size'] . ' },
                         "aggs": {
                             "count_docs_in_types": {
-                                "terms" : { "field" : "_type" }
+                                "terms" : { "field" : "_type", "size": 100 }
                             }
                         }
                     }

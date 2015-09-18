@@ -62,9 +62,42 @@ class FilesystemRepository implements FilesystemRepositoryInterface
         return $filesCreated;
     }
 
-    public function storeDocument()
+    /**
+     * Stores complete doc result (all fields like: _id, _source) into json file
+     * structure: data/index/type/_id.json
+     *
+     * @param string $path
+     * @param string $index
+     * @param string $type
+     * @param array $docs
+     * @return int
+     * @author Daniel Wendlandt
+     */
+    public function storeDocuments($path, $index, $type, array $docs)
     {
+        $folderPath = $path .
+            DIRECTORY_SEPARATOR .
+            self::DIR_DATA .
+            DIRECTORY_SEPARATOR .
+            $index .
+            DIRECTORY_SEPARATOR .
+            $type;
 
+        if(!$this->filesytsem->exists($folderPath)) {
+            $this->filesytsem->mkdir($folderPath);
+        }
+
+        $docsCreated = 0;
+
+        foreach($docs as $doc) {
+            $this->filesytsem->dumpFile(
+                $folderPath . DIRECTORY_SEPARATOR . $doc['_id'] . self::FILE_EXTENSION,
+                json_encode($doc));
+
+            $docsCreated++;
+        }
+
+        return $docsCreated;
     }
 
     public function symlinkLatestBackup($path)

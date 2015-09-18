@@ -70,9 +70,24 @@ class Index
      */
     public function addType(Type $type)
     {
-        $this->types[] = $type;
+        $this->types[$type->getName()] = $type;
     }
 
+    /**
+     * @param string $type
+     * @return int
+     * @author Daniel Wendlandt
+     */
+    public function getDocsInType($type)
+    {
+        if(!isset($this->types[$type])) {
+            return 0;
+        }
+        /** @var Type $indexObj */
+        $typeObj = $this->types[$type];
+
+        return $typeObj->getDocsInType();
+    }
 
 
 }

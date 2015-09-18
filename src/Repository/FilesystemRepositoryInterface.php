@@ -31,7 +31,18 @@ interface FilesystemRepositoryInterface
 
     public function storeMappings($path, Mappings $mappings);
 
-    public function storeDocument();
+    /**
+     * Stores complete doc result (all fields like: _id, _source) into json file
+     * structure: data/index/type/_id.json
+     *
+     * @param string $path
+     * @param string $index
+     * @param string $type
+     * @param array $docs
+     * @return int
+     * @author Daniel Wendlandt
+     */
+    public function storeDocuments($path, $index, $type, array $docs);
 
     public function symlinkLatestBackup($path);
 

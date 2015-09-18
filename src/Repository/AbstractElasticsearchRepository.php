@@ -25,6 +25,9 @@ abstract class AbstractElasticsearchRepository
      */
     private $clients = [];
 
+    /**
+     * @var SerializerInterface
+     */
     private $serializer = null;
 
     /**

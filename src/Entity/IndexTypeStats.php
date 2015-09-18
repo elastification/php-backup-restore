@@ -34,7 +34,30 @@ class IndexTypeStats
      */
     public function addIndex(Index $index)
     {
-        $this->indices[] = $index;
+        $this->indices[$index->getName()] = $index;
+    }
+
+    /**
+     * Gets number of docs for index/type
+     *
+     * @param string $index
+     * @param null|string $type
+     * @return int
+     * @author Daniel Wendlandt
+     */
+    public function getDocCount($index, $type = null)
+    {
+        if(!isset($this->indices[$index])) {
+            return 0;
+        }
+        /** @var Index $indexObj */
+        $indexObj = $this->indices[$index];
+
+        if(null === $type) {
+            return $indexObj->getDocsInIndex();
+        }
+
+        return $indexObj->getDocsInType($type);
     }
 
 }

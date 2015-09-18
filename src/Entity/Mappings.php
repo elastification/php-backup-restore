@@ -30,5 +30,14 @@ class Mappings
         $this->indices[] = $index;
     }
 
+    /**
+     * @return int
+     * @author Daniel Wendlandt
+     */
+    public function countIndices()
+    {
+        return count($this->indices);
+    }
+
 
 }

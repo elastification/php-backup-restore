@@ -14,6 +14,7 @@ class JobStats
 {
     const NAME_CREATE_STRUCTURE = 'create_structure';
     const NAME_STORE_MAPPINGS = 'store_mappings';
+    const NAME_STORE_DATA = 'store_data';
 
     /**
      * @var array
@@ -67,6 +68,11 @@ class JobStats
     public function setStoreMappings($timeTaken, $memoryUsage, $memoryUsed, array $options = array())
     {
         $this->setData(self::NAME_STORE_MAPPINGS, $timeTaken, $memoryUsage, $memoryUsed, $options);
+    }
+
+    public function setStoreData($timeTaken, $memoryUsage, $memoryUsed, array $options = array())
+    {
+        $this->setData(self::NAME_STORE_DATA, $timeTaken, $memoryUsage, $memoryUsed, $options);
     }
 
     /**
