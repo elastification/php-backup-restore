@@ -48,6 +48,17 @@ class BackupBusinessCase
         }
     }
 
+    /**
+     * Creates a backup job
+     *
+     * @param string $target
+     * @param string $host
+     * @param int $port
+     * @param array $mappings
+     * @return BackupJob
+     * @throws \Exception
+     * @author Daniel Wendlandt
+     */
     public function createJob($target, $host, $port = 9200, array $mappings = array())
     {
         $backupJob = new BackupJob();
@@ -71,6 +82,14 @@ class BackupBusinessCase
         return $backupJob;
     }
 
+    /**
+     * Runs the specified job and returns job statistics
+     *
+     * @param BackupJob $job
+     * @param OutputInterface $output
+     * @author Daniel Wendlandt
+     * @return JobStats
+     */
     public function execute(BackupJob $job, OutputInterface $output)
     {
         $memoryAtStart = memory_get_usage();
@@ -79,6 +98,45 @@ class BackupBusinessCase
         $jobStats = new JobStats();
 
         //SECTION create_structure
+        $this->createStructure($job, $jobStats, $output);
+
+        //SECTION store_mappings
+        $this->storeMappings($job, $jobStats, $output);
+
+        //SECTION store_data
+        $storedStats = $this->storeData($job, $jobStats, $output);
+
+        //global stuff
+        $this->filesystem->symlinkLatestBackup($job->getPath());
+        $output->writeln('<info>*** Symlinked ' . $job->getPath() . ' to latest ***</info>' . PHP_EOL);
+
+        //todo write meta data like: server-info, storedStats
+
+        //todo create yml config of this backup and put it into meta folder
+
+        $jobStats->setTimeTaken(microtime(true) - $timeStart);
+        $jobStats->setMemoryUsed(memory_get_usage() - $memoryAtStart);
+        $jobStats->setMemoryUsage(memory_get_usage());
+        $jobStats->setMemoryUsageReal(memory_get_usage(true));
+
+        //todo store jobStats to meta
+
+        $output->writeln('');
+        $output->writeln($this->getResultLineForOutput($jobStats));
+
+        return $jobStats;
+    }
+
+    /**
+     * Create folder structure for a job
+     *
+     * @param BackupJob $job
+     * @param JobStats $jobStats
+     * @param OutputInterface $output
+     * @author Daniel Wendlandt
+     */
+    private function createStructure(BackupJob $job, JobStats $jobStats, OutputInterface $output)
+    {
         $memoryAtSection = memory_get_usage();
         $timeStartSection = microtime(true);
 
@@ -89,8 +147,19 @@ class BackupBusinessCase
             memory_get_usage(),
             memory_get_usage() - $memoryAtSection);
 
+        $output->writeln('<info>*** Created folder structure ***</info>' . PHP_EOL);
+    }
 
-        //SECTION store_mappings
+    /**
+     * Stores mappings into filesystem
+     *
+     * @param BackupJob $job
+     * @param JobStats $jobStats
+     * @param OutputInterface $output
+     * @author Daniel Wendlandt
+     */
+    private function storeMappings(BackupJob $job, JobStats $jobStats, OutputInterface $output)
+    {
         $memoryAtSection = memory_get_usage();
         $timeStartSection = microtime(true);
 
@@ -102,27 +171,40 @@ class BackupBusinessCase
             memory_get_usage() - $memoryAtSection,
             array('mappingFilesCreated' => $mappingFilesCreated));
 
+        $output->writeln('<info>*** Stored ' . $mappingFilesCreated . ' mapping files ***</info>' . PHP_EOL);
 
-        //SECTION store_data
-        $this->storeData($job, $jobStats, $output);
-
-        //global stuff
-        $this->filesystem->symlinkLatestBackup($job->getPath());
-
-        $jobStats->setTimeTaken(microtime(true) - $timeStart);
-        $jobStats->setMemoryUsed(memory_get_usage() - $memoryAtStart);
-        $jobStats->setMemoryUsage(memory_get_usage());
-        $jobStats->setMemoryUsageReal(memory_get_usage(true));
+        /** @var Index $index */
+        foreach($job->getMappings()->getIndices() as $index) {
+            /** @var Type $type */
+            foreach ($index->getTypes() as $type) {
+                $output->writeln(
+                    '<comment> - ' .
+                    $index->getName() .
+                    DIRECTORY_SEPARATOR.
+                    $type->getName().
+                    FilesystemRepository::FILE_EXTENSION .
+                    '</comment>');
+            }
+        }
 
         $output->writeln('');
-        $output->writeln($this->getResultLineForOutput($jobStats));
-
     }
 
+    /**
+     * Stores data into the filesystem and returns stored stats
+     *
+     * @param BackupJob $job
+     * @param JobStats $jobStats
+     * @param OutputInterface $output
+     * @return array
+     * @author Daniel Wendlandt
+     */
     private function storeData(BackupJob $job, JobStats $jobStats, OutputInterface $output)
     {
         $memoryAtSection = memory_get_usage();
         $timeStartSection = microtime(true);
+
+        $output->writeln('<info>*** Starting with data storing ***</info>' . PHP_EOL);
 
         $docCount = $this->elastic->getDocCountByIndexType(
             $job->getHost(),
@@ -194,6 +276,13 @@ class BackupBusinessCase
         return $storedStats;
     }
 
+    /**
+     * Gets the content for the resultline
+     *
+     * @param JobStats $jobStats
+     * @return string
+     * @author Daniel Wendlandt
+     */
     private function getResultLineForOutput(JobStats $jobStats)
     {
         $line = '<info>Finished in <comment>%s</comment>'.
