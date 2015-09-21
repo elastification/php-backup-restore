@@ -23,7 +23,6 @@ use Elastification\Client\Exception\ClientException;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Yaml\Dumper;
-use Symfony\Component\Yaml\Yaml;
 
 class BackupBusinessCase
 {
@@ -74,11 +73,10 @@ class BackupBusinessCase
         $backupJob->setPort($port);
         $backupJob->setTarget($target);
         $backupJob->setServerInfo($this->elastic->getServerInfo($host, $port));
+        $backupJob->setMappings($this->elastic->getAllMappings($host, $port));
 
-        if(empty($mappings)) {
-            $backupJob->setMappings($this->elastic->getAllMappings($host, $port));
-        } else {
-            throw new \Exception('custom types not implemented yet');
+        if(!empty($mappings)) {
+            $backupJob->getMappings()->processIndices($mappings);
         }
 
         if(!VersionHelper::isVersionAllowed($backupJob->getServerInfo()->version)) {

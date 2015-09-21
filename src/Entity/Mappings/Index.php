@@ -45,11 +45,33 @@ class Index
     }
 
     /**
+     * @return int
+     * @author Daniel Wendlandt
+     */
+    public function countTypes()
+    {
+        return count($this->types);
+    }
+
+    /**
      * @param Type $type
      */
     public function addType(Type $type)
     {
         $this->types[] = $type;
+    }
+
+    /**
+     * removes a type by index
+     *
+     * @param int $index
+     * @author Daniel Wendlandt
+     */
+    public function removeTypeByIndex($index)
+    {
+        if(isset($this->types[$index])) {
+            unset($this->types[$index]);
+        }
     }
 
 

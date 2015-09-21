@@ -9,6 +9,7 @@
 namespace Elastification\BackupRestore\Entity;
 
 use Elastification\BackupRestore\Entity\Mappings\Index;
+use Elastification\BackupRestore\Entity\Mappings\Type;
 
 class Mappings
 {
@@ -37,6 +38,51 @@ class Mappings
     public function countIndices()
     {
         return count($this->indices);
+    }
+
+    /**
+     * Goes through all indices ans types and reduces them by given ones
+     *
+     * @param array $indicesTypes
+     * @author Daniel Wendlandt
+     */
+    public function processIndices(array $indicesTypes)
+    {
+        if(empty($indicesTypes)) {
+            return;
+        }
+
+        //reformat non string based array
+        if(is_array($indicesTypes[0]) && isset($indicesTypes[0]['index']) && isset($indicesTypes[0]['index'])) {
+            $givenIndices = $indicesTypes;
+            $indicesTypes = array();
+
+            foreach($givenIndices as $given) {
+                $indicesTypes[] = $given['index'] . '/' . $given['type'];
+            }
+        }
+
+        /**
+         * @var string $indexName
+         * @var Index $index
+         */
+        foreach($this->indices as $indexIdx => $index) {
+            /**
+             * @var string $typeName
+             * @var Type $type
+             */
+            foreach($index->getTypes() as $typeIndex => $type) {
+                $name = $index->getName() . '/' . $type->getName();
+
+                if(!in_array($name, $indicesTypes)) {
+                    $index->removeTypeByIndex($typeIndex);
+                }
+            }
+
+            if(0 === $index->countTypes()) {
+                unset($this->indices[$indexIdx]);
+            }
+        }
     }
 
 

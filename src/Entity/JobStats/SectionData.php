@@ -40,7 +40,7 @@ class SectionData
      */
     private $options = array();
 
-    
+
     public function __construct()
     {
         $this->createdAt = new \DateTime();

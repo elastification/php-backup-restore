@@ -9,12 +9,18 @@
 namespace Elastification\BackupRestore\Command;
 
 use Elastification\BackupRestore\BusinessCase\BackupBusinessCase;
+use Elastification\BackupRestore\Entity\BackupJob;
+use Elastification\BackupRestore\Entity\Mappings\Index;
+use Elastification\BackupRestore\Entity\Mappings\Type;
 use Elastification\BackupRestore\Helper\VersionHelper;
 use Elastification\BackupRestore\Repository\ElasticsearchRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\ChoiceQuestion;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
+use Symfony\Component\Console\Question\Question;
 
 class BackupRunCommand extends Command
 {
@@ -66,29 +72,110 @@ class BackupRunCommand extends Command
         $host = $input->getOption('host');
         $port = $input->getOption('port');
         $target = $input->getOption('target');
+
         //check options and throw exception if not valid
         $this->checkOptions($host, $type, $target);
 
-        //get server info
-//        $elastic = new ElasticsearchRepository();
-//        $serverInfo = $elastic->getServerInfo($host, $port);
-//
-//        if(!VersionHelper::isVersionAllowed($serverInfo->version)) {
-//            throw new \Exception('Elasticsearch version ' . $serverInfo->version . ' is not supported by this tool');
-//        }
-
-        //var_dump($serverInfo);
-//        var_dump($elastic->getDocCountByIndexType($host, $port));
-//        var_dump($elastic->getAllMappings($host, $port));
-
+        if(self::OPTION_TYPE_FULL != $type && null === $target) {
+            $target = $this->askForTarget($input, $output);
+        }
 
         $backupBusinessCase = new BackupBusinessCase();
-        //todo apply indices for custom as fourth argument
         $backupJob = $backupBusinessCase->createJob($target, $host, $port);
 
-        $backupBusinessCase->execute($backupJob, $output);
-//        var_dump($backupJob->getPath());
-        //$output->writeln('jeppa backup');
+        //index/type processing
+        $indices = $this->askForIndicesTypes($input, $output, $backupJob);
+        if($this->hasAllIndices($indices)) {
+            $indices = array();
+        }
+        $backupJob->getMappings()->processIndices($indices);
+
+        if(!$proceed = $this->askForProceeding($input, $output)) {
+            $output->writeln('<error>Do not backup anything !!!</error>');
+        } else {
+            $backupBusinessCase->execute($backupJob, $output);
+        }
+
+    }
+
+    /**
+     * Asks for going on with the backup
+     *
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return mixed
+     * @author Daniel Wendlandt
+     */
+    public function askForProceeding(InputInterface $input, OutputInterface $output)
+    {
+        $helper = $this->getHelper('question');
+        $question = new ConfirmationQuestion('<info>Do want to proceed with the backup?</info> [<comment>y/n</comment>]:');
+
+        return $helper->ask($input, $output, $question);
+    }
+
+    /**
+     * Asks for target
+     *
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return string
+     * @author Daniel Wendlandt
+     */
+    private function askForTarget(InputInterface $input, OutputInterface $output)
+    {
+        $samplePath = '/tmp/elastic-backup';
+        $helper = $this->getHelper('question');
+        $question = $this->getQuestion('Please enter the target path', $samplePath);
+
+        return $helper->ask($input, $output, $question);
+    }
+
+    /**
+     * Asking for indeces/types wich should be used
+     *
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @param BackupJob $job
+     * @return mixed
+     * @author Daniel Wendlandt
+     */
+    private function askForIndicesTypes(InputInterface $input, OutputInterface $output, BackupJob $job)
+    {
+        $mappings = array();
+        $mappings[] = 'all';
+
+        /** @var Index $index */
+        foreach($job->getMappings()->getIndices() as $index) {
+            /** @var Type $type */
+            foreach($index->getTypes() as $type) {
+                $mappings[] = $index->getName() . '/' . $type->getName();
+            }
+        }
+
+        $helper = $this->getHelper('question');
+        $question = new ChoiceQuestion('<info>Please select indices/types that should be dumped (separate multiple by colon)</info> [<comment>all</comment>]:', $mappings, '0');
+        $question->setMultiselect(true);
+
+        return $helper->ask($input, $output, $question);
+    }
+
+    /**
+     * Creates a question
+     *
+     * @param string $question
+     * @param string $default
+     * @param string $sep
+     * @return Question
+     * @author Daniel Wendlandt
+     */
+    private function getQuestion($question, $default, $sep = ':')
+    {
+        $questionString = $default ?
+            sprintf('<info>%s</info> [<comment>%s</comment>]%s ', $question, $default, $sep) :
+            sprintf('<info>%s</info>%s ', $question, $sep);
+
+        return new Question($questionString, $default);
     }
 
     /**
@@ -115,5 +202,22 @@ class BackupRunCommand extends Command
         if(self::OPTION_TYPE_FULL == $type && null === $target) {
             throw new \Exception('Please set target option for full backup type');
         }
+    }
+
+    /**
+     * Checks if all indices is given in array
+     *
+     * @param array $indices
+     * @return bool
+     * @author Daniel Wendlandt
+     */
+    private function hasAllIndices(array $indices) {
+        foreach($indices as $indexType) {
+            if('all' === $indexType) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

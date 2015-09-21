@@ -11,11 +11,6 @@ use Elastification\BackupRestore\Entity\IndexTypeStats;
 use Elastification\BackupRestore\Entity\JobStats;
 use Elastification\BackupRestore\Entity\Mappings;
 use Elastification\BackupRestore\Entity\ServerInfo;
-use Elastification\BackupRestore\Helper\VersionHelper;
-use Elastification\BackupRestore\Repository\ElasticQuery\QueryInterface;
-use Elastification\Client\Request\V1x\NodeInfoRequest;
-use Elastification\Client\Request\V1x\SearchRequest;
-use Elastification\Client\Response\V1x\NodeInfoResponse;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Yaml\Dumper;
 
