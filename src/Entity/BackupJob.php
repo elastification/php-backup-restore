@@ -45,6 +45,7 @@ class BackupJob
      */
     private $createdAt;
 
+
     public function __construct()
     {
         $this->createdAt = new \DateTime();
@@ -173,7 +174,5 @@ class BackupJob
     {
         $this->createdAt = $createdAt;
     }
-
-
 
 }

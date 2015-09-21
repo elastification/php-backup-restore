@@ -40,6 +40,7 @@ class SectionData
      */
     private $options = array();
 
+    
     public function __construct()
     {
         $this->createdAt = new \DateTime();
@@ -133,7 +134,20 @@ class SectionData
         return $this->createdAt;
     }
 
-
-
+    /**
+     * @return array
+     * @author Daniel Wendlandt
+     */
+    public function toArray()
+    {
+        return array(
+            'name' => $this->name,
+            'timeTaken' => $this->timeTaken,
+            'memoryUsage' => $this->memoryUsage,
+            'memoryUsed' => $this->memoryUsed,
+            'options' => $this->options,
+            'createdAt' => $this->createdAt->format('Y-m-d H:i:s')
+        );
+    }
 
 }

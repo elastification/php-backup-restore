@@ -8,6 +8,7 @@
 namespace Elastification\BackupRestore\Repository;
 
 use Elastification\BackupRestore\Entity\IndexTypeStats;
+use Elastification\BackupRestore\Entity\JobStats;
 use Elastification\BackupRestore\Entity\Mappings;
 use Elastification\BackupRestore\Entity\ServerInfo;
 use Elastification\BackupRestore\Helper\VersionHelper;
@@ -16,6 +17,7 @@ use Elastification\Client\Request\V1x\NodeInfoRequest;
 use Elastification\Client\Request\V1x\SearchRequest;
 use Elastification\Client\Response\V1x\NodeInfoResponse;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Yaml\Dumper;
 
 class FilesystemRepository implements FilesystemRepositoryInterface
 {
@@ -25,13 +27,36 @@ class FilesystemRepository implements FilesystemRepositoryInterface
      */
     private $filesytsem;
 
-    public function __construct(Filesystem $filesystem = null)
+    /**
+     * @var Dumper
+     */
+    private $yamlDumper;
+
+    /**
+     * @param Filesystem|null $filesystem
+     * @param Dumper $yamlDumper
+     */
+    public function __construct(Filesystem $filesystem = null, Dumper $yamlDumper = null)
     {
         if(null === $filesystem) {
             $this->filesytsem = new Filesystem();
+        } else {
+            $this->filesytsem = $filesystem;
+        }
+
+        if(null === $yamlDumper) {
+            $this->yamlDumper = new Dumper();
+        } else {
+            $this->yamlDumper = $yamlDumper;
         }
     }
 
+    /**
+     * Creates the backup structure for a given path/job
+     *
+     * @param string $path
+     * @author Daniel Wendlandt
+     */
     public function createStructure($path)
     {
         $this->filesytsem->mkdir(array(
@@ -41,6 +66,14 @@ class FilesystemRepository implements FilesystemRepositoryInterface
         ));
     }
 
+    /**
+     * Stores all mappings. Returns the number of mappings that were stored
+     *
+     * @param string $path
+     * @param Mappings $mappings
+     * @return int
+     * @author Daniel Wendlandt
+     */
     public function storeMappings($path, Mappings $mappings)
     {
         $filesCreated = 0;
@@ -64,7 +97,7 @@ class FilesystemRepository implements FilesystemRepositoryInterface
 
     /**
      * Stores complete doc result (all fields like: _id, _source) into json file
-     * structure: data/index/type/_id.json
+     * structure: data/index/type/[first two docId chars]/_id.json
      *
      * @param string $path
      * @param string $index
@@ -73,7 +106,7 @@ class FilesystemRepository implements FilesystemRepositoryInterface
      * @return int
      * @author Daniel Wendlandt
      */
-    public function storeDocuments($path, $index, $type, array $docs)
+    public function storeData($path, $index, $type, array $docs)
     {
         $folderPath = $path .
             DIRECTORY_SEPARATOR .
@@ -88,11 +121,15 @@ class FilesystemRepository implements FilesystemRepositoryInterface
         }
 
         $docsCreated = 0;
-
         foreach($docs as $doc) {
-            $this->filesytsem->dumpFile(
-                $folderPath . DIRECTORY_SEPARATOR . $doc['_id'] . self::FILE_EXTENSION,
-                json_encode($doc));
+            $filePath = $folderPath .
+                DIRECTORY_SEPARATOR .
+                substr($doc['_id'], 0, 2) .
+                DIRECTORY_SEPARATOR .
+                $doc['_id'] .
+                self::FILE_EXTENSION;
+
+            $this->filesytsem->dumpFile($filePath, json_encode($doc));
 
             $docsCreated++;
         }
@@ -100,6 +137,88 @@ class FilesystemRepository implements FilesystemRepositoryInterface
         return $docsCreated;
     }
 
+    /**
+     * Stores server info as json
+     *
+     * @param string $path
+     * @param ServerInfo $serverInfo
+     * @author Daniel Wendlandt
+     */
+    public function storeServerInfo($path, ServerInfo $serverInfo)
+    {
+        $filepath = $path .
+            DIRECTORY_SEPARATOR .
+            self::DIR_META .
+            DIRECTORY_SEPARATOR .
+            self::FILENAME_SERVER_INFO .
+            self::FILE_EXTENSION;
+
+        $this->filesytsem->dumpFile($filepath, json_encode($serverInfo));
+    }
+
+    /**
+     * Stores processed backup job stats
+     *
+     * @param string $path
+     * @param array $storedStats
+     * @author Daniel Wendlandt
+     */
+    public function storeStoredStats($path, array $storedStats)
+    {
+        $filepath = $path .
+            DIRECTORY_SEPARATOR .
+            self::DIR_META .
+            DIRECTORY_SEPARATOR .
+            self::FILENAME_STORED_STATS .
+            self::FILE_EXTENSION;
+
+        $this->filesytsem->dumpFile($filepath, json_encode($storedStats));
+    }
+
+    /**
+     * Stores job statistics as json to file
+     *
+     * @param string $path
+     * @param JobStats $jobStats
+     * @author Daniel Wendlandt
+     */
+    public function storeJobStats($path, JobStats $jobStats)
+    {
+        $filepath = $path .
+            DIRECTORY_SEPARATOR .
+            self::DIR_META .
+            DIRECTORY_SEPARATOR .
+            self::FILENAME_JOB_STATS .
+            self::FILE_EXTENSION;
+
+        $this->filesytsem->dumpFile($filepath, json_encode($jobStats->toArray()));
+    }
+
+    /**
+     * Stores the backup config as yml
+     *
+     * @param string $filepath
+     * @param array $data
+     * @author Daniel Wendlandt
+     */
+    public function storeBackupConfig($filepath, array $data)
+    {
+        $filepath = $filepath .
+            DIRECTORY_SEPARATOR .
+            self::DIR_CONFIG .
+            DIRECTORY_SEPARATOR .
+            self::FILENAME_CONFIG_BACKUP .
+            self::FILE_EXTENSION_CONFIG;
+
+        $this->filesytsem->dumpFile($filepath, $this->yamlDumper->dump($data, 5));
+    }
+
+    /**
+     * Symlink given path to latest in file system
+     *
+     * @param string $path
+     * @author Daniel Wendlandt
+     */
     public function symlinkLatestBackup($path)
     {
         $latestPath = dirname($path) . DIRECTORY_SEPARATOR . self::SYMLINK_LATEST;
