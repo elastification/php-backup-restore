@@ -37,9 +37,15 @@ class BackupRunCommand extends Command
             ->setName('backup:run')
             ->setDescription('Start interactive shell for creating a backup of your data')
             ->addOption(
+                'config',
+                null,
+                InputOption::VALUE_OPTIONAL,
+                'A path to a file in yaml format'
+            )
+            ->addOption(
                 'host',
                 null,
-                InputOption::VALUE_REQUIRED,
+                InputOption::VALUE_OPTIONAL,
                 'If config is not set, this is required.'
             )
             ->addOption(
@@ -68,34 +74,68 @@ class BackupRunCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         //get options
+        $config = $input->getOption('config');
         $type = $input->getOption('type');
         $host = $input->getOption('host');
         $port = $input->getOption('port');
         $target = $input->getOption('target');
 
         //check options and throw exception if not valid
-        $this->checkOptions($host, $type, $target);
+        $this->checkOptions($config, $host, $type, $target);
 
+        $backupBusinessCase = new BackupBusinessCase();
+
+        //config given process
+        //todo list config and ask for proceeding
+        //todo merge host port if not null. options overwrite config settings
+        if(null !== $config) {
+            $configJob = $backupBusinessCase->createJobFromConfig($config);
+
+//            $this->runJob($input, $output, $backupBusinessCase, $configJob);
+            return;
+        }
+
+
+        //custom process
         if(self::OPTION_TYPE_FULL != $type && null === $target) {
             $target = $this->askForTarget($input, $output);
         }
 
-        $backupBusinessCase = new BackupBusinessCase();
         $backupJob = $backupBusinessCase->createJob($target, $host, $port);
 
         //index/type processing
-        $indices = $this->askForIndicesTypes($input, $output, $backupJob);
-        if($this->hasAllIndices($indices)) {
-            $indices = array();
+        if(self::OPTION_TYPE_FULL != $type) {
+            $indices = $this->askForIndicesTypes($input, $output, $backupJob);
+            if($this->hasAllIndices($indices)) {
+                $indices = array();
+            }
+            $backupJob->getMappings()->processIndices($indices);
         }
-        $backupJob->getMappings()->processIndices($indices);
 
+
+        $this->runJob($input, $output, $backupBusinessCase, $backupJob);
+    }
+
+    /**
+     * Asks for proceeding, before performing the job
+     *
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @param BackupBusinessCase $backupBusinessCase
+     * @param BackupJob $backupJob
+     * @author Daniel Wendlandt
+     */
+    private function runJob(
+        InputInterface $input,
+        OutputInterface $output,
+        BackupBusinessCase $backupBusinessCase,
+        BackupJob $backupJob
+    ) {
         if(!$proceed = $this->askForProceeding($input, $output)) {
             $output->writeln('<error>Do not backup anything !!!</error>');
         } else {
             $backupBusinessCase->execute($backupJob, $output);
         }
-
     }
 
     /**
@@ -106,7 +146,7 @@ class BackupRunCommand extends Command
      * @return mixed
      * @author Daniel Wendlandt
      */
-    public function askForProceeding(InputInterface $input, OutputInterface $output)
+    private function askForProceeding(InputInterface $input, OutputInterface $output)
     {
         $helper = $this->getHelper('question');
         $question = new ConfirmationQuestion('<info>Do want to proceed with the backup?</info> [<comment>y/n</comment>]:');
@@ -187,9 +227,9 @@ class BackupRunCommand extends Command
      * @throws \Exception
      * @author Daniel Wendlandt
      */
-    private function checkOptions($host, $type, $target)
+    private function checkOptions($config, $host, $type, $target)
     {
-        if(null === $host) {
+        if(null === $config && null === $host) {
             throw new \Exception('Please set config or host option');
         }
 

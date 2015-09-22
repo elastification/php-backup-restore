@@ -88,6 +88,14 @@ class BackupBusinessCase
         return $backupJob;
     }
 
+    public function createJobFromConfig($filepath)
+    {
+        $config = $this->filesystem->loadYamlConfig($filepath);
+
+        var_dump($config);
+        die();
+    }
+
     /**
      * Runs the specified job and returns job statistics
      *

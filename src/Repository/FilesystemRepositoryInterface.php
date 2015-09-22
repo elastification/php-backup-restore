@@ -33,7 +33,7 @@ interface FilesystemRepositoryInterface
     const FILENAME_CONFIG_BACKUP = 'backup-cfg';
 
     const FILE_EXTENSION = '.json';
-    const FILE_EXTENSION_CONFIG = '.cml';
+    const FILE_EXTENSION_CONFIG = '.yml';
 
     /**
      * Creates the backup structure for a given path/job
@@ -108,6 +108,16 @@ interface FilesystemRepositoryInterface
      * @author Daniel Wendlandt
      */
     public function symlinkLatestBackup($path);
+
+    /**
+     * Loads a file and parses the yaml content into an array
+     *
+     * @param string $filepath
+     * @return array
+     * @throws \Exception
+     * @author Daniel Wendlandt
+     */
+    public function loadYamlConfig($filepath);
 
 }
 

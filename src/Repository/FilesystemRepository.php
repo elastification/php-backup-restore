@@ -13,6 +13,7 @@ use Elastification\BackupRestore\Entity\Mappings;
 use Elastification\BackupRestore\Entity\ServerInfo;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Yaml\Dumper;
+use Symfony\Component\Yaml\Parser;
 
 class FilesystemRepository implements FilesystemRepositoryInterface
 {
@@ -27,11 +28,15 @@ class FilesystemRepository implements FilesystemRepositoryInterface
      */
     private $yamlDumper;
 
+
+    private $yamlParser;
+
     /**
      * @param Filesystem|null $filesystem
      * @param Dumper $yamlDumper
+     * @param Parser $yamlParser
      */
-    public function __construct(Filesystem $filesystem = null, Dumper $yamlDumper = null)
+    public function __construct(Filesystem $filesystem = null, Dumper $yamlDumper = null, Parser $yamlParser = null)
     {
         if(null === $filesystem) {
             $this->filesytsem = new Filesystem();
@@ -43,6 +48,12 @@ class FilesystemRepository implements FilesystemRepositoryInterface
             $this->yamlDumper = new Dumper();
         } else {
             $this->yamlDumper = $yamlDumper;
+        }
+
+        if(null === $yamlParser) {
+            $this->yamlParser = new Parser();
+        } else {
+            $this->yamlParser = $yamlParser;
         }
     }
 
@@ -223,6 +234,25 @@ class FilesystemRepository implements FilesystemRepositoryInterface
         }
 
         $this->filesytsem->symlink($path, $latestPath);
+    }
+
+    /**
+     * Loads a file and parses the yaml content into an array
+     *
+     * @param string $filepath
+     * @return array
+     * @throws \Exception
+     * @author Daniel Wendlandt
+     */
+    public function loadYamlConfig($filepath)
+    {
+        if(!$this->filesytsem->exists($filepath)) {
+            throw new \Exception('Config file ' . $filepath . ' does not exist.');
+        }
+
+        $yamlString = file_get_contents($filepath);
+
+        return $this->yamlParser->parse($yamlString);
     }
 }
 
