@@ -89,9 +89,25 @@ class BackupRunCommand extends Command
         //todo list config and ask for proceeding
         //todo merge host port if not null. options overwrite config settings
         if(null !== $config) {
-            $configJob = $backupBusinessCase->createJobFromConfig($config);
+            $configJob = $backupBusinessCase->createJobFromConfig($config, $host, $port);
 
-//            $this->runJob($input, $output, $backupBusinessCase, $configJob);
+            $output->writeln('<info>Backup Source is:</info> <comment>' .
+                $configJob->getHost() . ':' . $configJob->getPort() .
+                '</comment>' . PHP_EOL);
+            $output->writeln('<info>Indices/Types for this job are:</info>');
+
+            //display all index/type
+            /** @var Index $index */
+            foreach($configJob->getMappings()->getIndices() as $index) {
+                /** @var Type $type */
+                foreach($index->getTypes() as $type) {
+                    $output->writeln('<comment> - ' . $index->getName() . '/' . $type->getName() . '</comment>');
+                }
+            }
+            $output->writeln('');
+
+
+            $this->runJob($input, $output, $backupBusinessCase, $configJob);
             return;
         }
 
@@ -113,7 +129,7 @@ class BackupRunCommand extends Command
         }
 
 
-        $this->runJob($input, $output, $backupBusinessCase, $backupJob);
+        $this->runJob($input, $output, $backupBusinessCase, $backupJob, self::OPTION_TYPE_FULL != $type);
     }
 
     /**
@@ -123,16 +139,23 @@ class BackupRunCommand extends Command
      * @param OutputInterface $output
      * @param BackupBusinessCase $backupBusinessCase
      * @param BackupJob $backupJob
+     * @param bool $askForProceeding
      * @author Daniel Wendlandt
      */
     private function runJob(
         InputInterface $input,
         OutputInterface $output,
         BackupBusinessCase $backupBusinessCase,
-        BackupJob $backupJob
+        BackupJob $backupJob,
+        $askForProceeding = true
     ) {
+        if(!$askForProceeding) {
+            $backupBusinessCase->execute($backupJob, $output);
+            return;
+        }
+
         if(!$proceed = $this->askForProceeding($input, $output)) {
-            $output->writeln('<error>Do not backup anything !!!</error>');
+            $output->writeln('<error>Aborted !!!</error>');
         } else {
             $backupBusinessCase->execute($backupJob, $output);
         }

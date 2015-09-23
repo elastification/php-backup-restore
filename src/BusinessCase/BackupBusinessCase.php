@@ -88,12 +88,19 @@ class BackupBusinessCase
         return $backupJob;
     }
 
-    public function createJobFromConfig($filepath)
+    public function createJobFromConfig($filepath, $host = null, $port = null)
     {
         $config = $this->filesystem->loadYamlConfig($filepath);
 
-        var_dump($config);
-        die();
+        if(null === $host) {
+            $host = $config['host'];
+        }
+
+        if(null === $port) {
+            $port = $config['port'];
+        }
+
+        return $this->createJob($config['target'], $host, $port, $config['indices']);
     }
 
     /**

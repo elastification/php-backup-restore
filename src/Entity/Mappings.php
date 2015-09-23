@@ -72,6 +72,7 @@ class Mappings
              * @var Type $type
              */
             foreach($index->getTypes() as $typeIndex => $type) {
+
                 $name = $index->getName() . '/' . $type->getName();
 
                 if(!in_array($name, $indicesTypes)) {
