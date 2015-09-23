@@ -86,8 +86,6 @@ class BackupRunCommand extends Command
         $backupBusinessCase = new BackupBusinessCase();
 
         //config given process
-        //todo list config and ask for proceeding
-        //todo merge host port if not null. options overwrite config settings
         if(null !== $config) {
             $configJob = $backupBusinessCase->createJobFromConfig($config, $host, $port);
 
@@ -105,7 +103,6 @@ class BackupRunCommand extends Command
                 }
             }
             $output->writeln('');
-
 
             $this->runJob($input, $output, $backupBusinessCase, $configJob);
             return;
