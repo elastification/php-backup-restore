@@ -131,7 +131,7 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
                 $index->addType($type);
             }
 
-            $mappings->addIndices($index);
+            $mappings->addIndex($index);
         }
 
         return $mappings;

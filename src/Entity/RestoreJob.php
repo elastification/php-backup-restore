@@ -8,18 +8,18 @@
 
 namespace Elastification\BackupRestore\Entity;
 
-class BackupJob extends AbstractJob
+class RestoreJob extends AbstractJob
 {
+
     /**
      * @var string
      */
-    private $target;
+    private $source;
 
 
     public function __construct()
     {
         $this->setCreatedAt(new \DateTime());
-        $this->setName($this->getCreatedAt()->format('YmdHis'));
     }
 
     /**
@@ -30,23 +30,23 @@ class BackupJob extends AbstractJob
      */
     public function getPath()
     {
-        return $this->target . DIRECTORY_SEPARATOR . $this->getName();
+        return $this->source . DIRECTORY_SEPARATOR . $this->getName();
     }
 
     /**
      * @return string
      */
-    public function getTarget()
+    public function getSource()
     {
-        return $this->target;
+        return $this->source;
     }
 
     /**
-     * @param string $target
+     * @param string $source
      */
-    public function setTarget($target)
+    public function setSource($source)
     {
-        $this->target = $target;
+        $this->source = $source;
     }
 
 }

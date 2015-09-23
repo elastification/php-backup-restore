@@ -12,6 +12,8 @@ use Elastification\BackupRestore\Entity\JobStats;
 use Elastification\BackupRestore\Entity\Mappings;
 use Elastification\BackupRestore\Entity\ServerInfo;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Finder\Finder;
+use Symfony\Component\Finder\SplFileInfo;
 use Symfony\Component\Yaml\Dumper;
 use Symfony\Component\Yaml\Parser;
 
@@ -28,15 +30,28 @@ class FilesystemRepository implements FilesystemRepositoryInterface
      */
     private $yamlDumper;
 
-
+    /**
+     * @var Parser
+     */
     private $yamlParser;
+
+    /**
+     * @var Finder
+     */
+    private $finder;
+
 
     /**
      * @param Filesystem|null $filesystem
      * @param Dumper $yamlDumper
      * @param Parser $yamlParser
+     * @param Finder $finder
      */
-    public function __construct(Filesystem $filesystem = null, Dumper $yamlDumper = null, Parser $yamlParser = null)
+    public function __construct(
+        Filesystem $filesystem = null,
+        Dumper $yamlDumper = null,
+        Parser $yamlParser = null,
+        Finder $finder = null)
     {
         if(null === $filesystem) {
             $this->filesytsem = new Filesystem();
@@ -54,6 +69,12 @@ class FilesystemRepository implements FilesystemRepositoryInterface
             $this->yamlParser = new Parser();
         } else {
             $this->yamlParser = $yamlParser;
+        }
+
+        if(null === $finder) {
+            $this->finder = new Finder();
+        } else {
+            $this->yamlParser = $finder;
         }
     }
 
@@ -253,6 +274,51 @@ class FilesystemRepository implements FilesystemRepositoryInterface
         $yamlString = file_get_contents($filepath);
 
         return $this->yamlParser->parse($yamlString);
+    }
+
+    /**
+     * Loads the mappings that are located in the filesystem of stored backup
+     *
+     * @param string $filepath
+     * @return Mappings
+     * @throws \Exception
+     * @author Daniel Wendlandt
+     */
+    public function loadMappings($filepath)
+    {
+        $schemaFolderPath = $filepath . DIRECTORY_SEPARATOR . self::DIR_SCHEMA;
+
+        if(!$this->filesytsem->exists($schemaFolderPath)) {
+            throw new \Exception('Schema folder does not exist in ' . $filepath);
+        }
+
+        $indices = array();
+        /** @var SplFileInfo $file */
+        foreach($this->finder->files()->in($schemaFolderPath)->name('*' . self::FILE_EXTENSION) as $file) {
+            $indexName = $file->getRelativePath();
+
+            if(!isset($indices[$indexName])) {
+                $index = new Mappings\Index();
+                $index->setName($indexName);
+
+                $indices[$indexName] = $index;
+            }
+
+            /** @var Mappings\Index $index */
+            $index = $indices[$indexName];
+
+            //perform type;
+            $type = new Mappings\Type();
+            $type->setName($file->getBasename(self::FILE_EXTENSION));
+            $type->setSchema(json_decode(file_get_contents($file->getPathname()), true));
+
+            $index->addType($type);
+        }
+
+        $mappings = new Mappings();
+        $mappings->setIndices($indices);
+
+        return $mappings;
     }
 }
 

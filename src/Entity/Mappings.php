@@ -26,9 +26,22 @@ class Mappings
     /**
      * @param Index $index
      */
-    public function addIndices(Index $index)
+    public function addIndex(Index $index)
     {
         $this->indices[] = $index;
+    }
+
+    /**
+     * @param array $indices
+     * @author Daniel Wendlandt
+     */
+    public function setIndices(array $indices)
+    {
+        $this->indices = array();
+
+        foreach($indices as $index) {
+            $this->addIndex($index);
+        }
     }
 
     /**

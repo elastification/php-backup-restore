@@ -5,8 +5,10 @@
 require __DIR__.'/vendor/autoload.php';
 
 use Elastification\BackupRestore\Command\BackupRunCommand;
+use Elastification\BackupRestore\Command\RestoreRunCommand;
 use Symfony\Component\Console\Application;
 
 $application = new Application();
 $application->add(new BackupRunCommand());
+$application->add(new RestoreRunCommand());
 $application->run();

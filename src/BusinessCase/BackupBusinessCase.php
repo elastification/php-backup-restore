@@ -22,9 +22,8 @@ use Elastification\BackupRestore\Repository\FilesystemRepositoryInterface;
 use Elastification\Client\Exception\ClientException;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Yaml\Dumper;
 
-class BackupBusinessCase
+class BackupBusinessCase implements BackupBusinessCaseInterface
 {
     /**
      * @var ElasticsearchRepositoryInterface
@@ -39,8 +38,7 @@ class BackupBusinessCase
 
     public function __construct(
         ElasticsearchRepositoryInterface $elastic = null,
-        FilesystemRepositoryInterface $filesystem = null,
-        Dumper $yamlDumper = null
+        FilesystemRepositoryInterface $filesystem = null
     ) {
         if(null === $elastic) {
             $this->elastic = new ElasticsearchRepository();
@@ -88,6 +86,16 @@ class BackupBusinessCase
         return $backupJob;
     }
 
+    /**
+     * Creates a job from given config file in yaml format
+     *
+     * @param string $filepath
+     * @param null|string $host
+     * @param null|string $port
+     * @return BackupJob
+     * @throws \Exception
+     * @author Daniel Wendlandt
+     */
     public function createJobFromConfig($filepath, $host = null, $port = null)
     {
         $config = $this->filesystem->loadYamlConfig($filepath);

@@ -119,5 +119,15 @@ interface FilesystemRepositoryInterface
      */
     public function loadYamlConfig($filepath);
 
+    /**
+     * Loads the mappings that are located in the filesystem of stored backup
+     *
+     * @param string $filepath
+     * @return Mappings
+     * @throws \Exception
+     * @author Daniel Wendlandt
+     */
+    public function loadMappings($filepath);
+
 }
 
