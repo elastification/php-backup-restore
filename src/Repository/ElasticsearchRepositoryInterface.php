@@ -76,5 +76,17 @@ interface ElasticsearchRepositoryInterface
      * @author Daniel Wendlandt
      */
     public function getScrollSearchData($scrollId, $host, $port = 9200, $scrollTimeUnit = '10m');
+
+    /**
+     * Creates a mapping for given index and type
+     *
+     * @param string $index
+     * @param string $type
+     * @param array $schema
+     * @param $host
+     * @param int $port
+     * @author Daniel Wendlandt
+     */
+    public function createMapping($index, $type, array $schema, $host, $port = 9200);
 }
 

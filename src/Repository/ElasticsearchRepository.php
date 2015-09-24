@@ -12,6 +12,8 @@ use Elastification\BackupRestore\Entity\Mappings;
 use Elastification\BackupRestore\Entity\ServerInfo;
 use Elastification\BackupRestore\Helper\VersionHelper;
 use Elastification\BackupRestore\Repository\ElasticQuery\QueryInterface;
+use Elastification\Client\Exception\ClientException;
+use Elastification\Client\Request\V1x\Index\CreateMappingRequest;
 use Elastification\Client\Request\V1x\NodeInfoRequest;
 use Elastification\Client\Request\V1x\SearchRequest;
 use Elastification\Client\Request\V1x\SearchScrollRequest;
@@ -206,6 +208,52 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
         $response = $client->send($request);
 
         return $response->getHitsHits();
+    }
+
+    /**
+     * Creates a mapping for given index and type
+     *
+     * @param string $index
+     * @param string $type
+     * @param array $schema
+     * @param $host
+     * @param int $port
+     * @author Daniel Wendlandt
+     */
+    public function createMapping($index, $type, array $schema, $host, $port = 9200)
+    {
+        $client = $this->getClient($host, $port);
+        /** @var SearchResponse $response */
+
+        //delete existing one
+        $deleteRequestClassName = $this->getRequestClass('Index\\DeleteIndexRequest');
+        /** @var CreateMappingRequest $request */
+        $deleteRequest = new $deleteRequestClassName($index, $type, $this->getSerializer());
+
+        try {
+            $client->send($deleteRequest);
+        } catch(ClientException $exception) {
+            //do nothing. this is planned
+        }
+
+        //check for index and create one
+        $createRequestClassName = $this->getRequestClass('Index\\CreateIndexRequest');
+        /** @var CreateMappingRequest $request */
+        $createRequest = new $createRequestClassName($index, null, $this->getSerializer());
+
+        try {
+            $client->send($createRequest);
+        } catch(ClientException $exception) {
+            //do nothing. this is planned
+        }
+
+        //add new mapping
+        $requestClassName = $this->getRequestClass('Index\\CreateMappingRequest');
+        /** @var CreateMappingRequest $request */
+        $request = new $requestClassName($index, $type, $this->getSerializer());
+        $request->setBody($schema);
+
+        $client->send($request);
     }
 
     /**

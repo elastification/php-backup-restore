@@ -8,11 +8,11 @@
 
 namespace Elastification\BackupRestore\BusinessCase;
 
-use Elastification\BackupRestore\Entity\BackupJob;
 use Elastification\BackupRestore\Entity\JobStats;
 use Elastification\BackupRestore\Entity\Mappings\Index;
 use Elastification\BackupRestore\Entity\Mappings\Type;
 use Elastification\BackupRestore\Entity\RestoreJob;
+use Elastification\BackupRestore\Entity\RestoreStrategy;
 use Elastification\BackupRestore\Helper\DataSizeHelper;
 use Elastification\BackupRestore\Helper\TimeTakenHelper;
 use Elastification\BackupRestore\Helper\VersionHelper;
@@ -62,7 +62,7 @@ class RestoreBusinessCase
      * @param string $host
      * @param int $port
      * @param array $mappings
-     * @return BackupJob
+     * @return RestoreJob
      * @throws \Exception
      * @author Daniel Wendlandt
      */
@@ -113,78 +113,102 @@ class RestoreBusinessCase
 //        return $this->createJob($config['target'], $host, $port, $config['indices']);
 //    }
 //
-//    /**
-//     * Runs the specified job and returns job statistics
-//     *
-//     * @param BackupJob $job
-//     * @param OutputInterface $output
-//     * @author Daniel Wendlandt
-//     * @return JobStats
-//     */
-//    public function execute(BackupJob $job, OutputInterface $output)
-//    {
-//        $memoryAtStart = memory_get_usage();
-//        $timeStart = microtime(true);
-//
-//        $jobStats = new JobStats();
-//
-//        //SECTION create_structure
-//        $this->createStructure($job, $jobStats, $output);
-//
-//        //SECTION store_mappings
-//        $this->storeMappings($job, $jobStats, $output);
-//
-//        //SECTION store_data
-//        $storedStats = $this->storeData($job, $jobStats, $output);
-//
-//        //Section store_meta_data
+    /**
+     * Runs the specified job and returns job statistics
+     *
+     * @param RestoreJob $job
+     * @param OutputInterface $output
+     * @author Daniel Wendlandt
+     * @return JobStats
+     */
+    public function execute(RestoreJob $job, OutputInterface $output)
+    {
+        $memoryAtStart = memory_get_usage();
+        $timeStart = microtime(true);
+
+        $jobStats = new JobStats();
+
+        //SECTION handle_indices_and_mappings
+        $this->handleMappings($job, $jobStats, $output);
+
+        //SECTION restore_data
+
+        //Section store_meta_data
 //        $this->storeMetaData($job, $jobStats, $storedStats, $output);
-//
-//        //global stuff
-//        $this->filesystem->symlinkLatestBackup($job->getPath());
-//        $output->writeln('<info>*** Symlinked ' . $job->getPath() . ' to latest ***</info>' . PHP_EOL);
-//
-//
-//        //todo create yml config of this backup and put it into meta folder
-//        //store backup as config in config folder
+
+        //todo create yml config of this backup and put it into meta folder
+        //store backup as config in config folder
 //        $this->storeBackupConfig($job, $output);
-//
-//        //handle jobs stats and tore it to filesystem
-//        $jobStats->setTimeTaken(microtime(true) - $timeStart);
-//        $jobStats->setMemoryUsed(memory_get_usage() - $memoryAtStart);
-//        $jobStats->setMemoryUsage(memory_get_usage());
-//        $jobStats->setMemoryUsageReal(memory_get_usage(true));
-//
-//        $this->storeJobStats($job, $jobStats, $output);
-//
-//        $output->writeln('');
-//        $output->writeln($this->getResultLineForOutput($jobStats));
-//
-//        return $jobStats;
-//    }
-//
-//    /**
-//     * Create folder structure for a job
-//     *
-//     * @param BackupJob $job
-//     * @param JobStats $jobStats
-//     * @param OutputInterface $output
-//     * @author Daniel Wendlandt
-//     */
-//    private function createStructure(BackupJob $job, JobStats $jobStats, OutputInterface $output)
-//    {
-//        $memoryAtSection = memory_get_usage();
-//        $timeStartSection = microtime(true);
-//
-//        $this->filesystem->createStructure($job->getPath());
-//
-//        $jobStats->setCreateStructure(
-//            microtime(true) - $timeStartSection,
-//            memory_get_usage(),
-//            memory_get_usage() - $memoryAtSection);
-//
-//        $output->writeln('<info>*** Created folder structure ***</info>' . PHP_EOL);
-//    }
+
+        //handle jobs stats and tore it to filesystem
+        $jobStats->setTimeTaken(microtime(true) - $timeStart);
+        $jobStats->setMemoryUsed(memory_get_usage() - $memoryAtStart);
+        $jobStats->setMemoryUsage(memory_get_usage());
+        $jobStats->setMemoryUsageReal(memory_get_usage(true));
+
+        $this->storeJobStats($job, $jobStats, $output);
+
+        $output->writeln('');
+        $output->writeln($this->getResultLineForOutput($jobStats));
+
+        return $jobStats;
+    }
+
+    /**
+     * Take care of all mapping actions and handles all for elastic sid
+     *
+     * @param RestoreJob $job
+     * @param JobStats $jobStats
+     * @param OutputInterface $output
+     * @throws \Exception
+     * @author Daniel Wendlandt
+     */
+    private function handleMappings(RestoreJob $job, JobStats $jobStats, OutputInterface $output)
+    {
+        $memoryAtSection = memory_get_usage();
+        $timeStartSection = microtime(true);
+
+        $output->writeln('<info>*** Start handling mappings ***</info>' . PHP_EOL);
+        /** @var Index $index */
+        foreach($job->getMappings()->getIndices() as $index) {
+            /** @var Type $type */
+            foreach($index->getTypes() as $type) {
+                $mappingAction = $job->getStrategy()->getMapping($index->getName(), $type->getName());
+
+                if(null === $mappingAction) {
+                    throw new \Exception(
+                        'Mapping action missing for "' . $index->getName() . '/' . $type->getName() . '"');
+                }
+
+                if(RestoreStrategy::STRATEGY_RESET === $mappingAction->getStrategy()) {
+
+                    $schema = array($mappingAction->getTargetType() => $type->getSchema());
+                    $this->elastic->createMapping(
+                        $mappingAction->getTargetIndex(),
+                        $mappingAction->getTargetType(),
+                        $schema, $job->getHost(),
+                        $job->getPort());
+
+                    $output->writeln('<comment> - Created mapping from ' .
+                        $index->getName() . '/' . $type->getName() .
+                        ' to ' .
+                        $mappingAction->getTargetIndex() . '/' . $mappingAction->getTargetType() .
+                        '</comment>');
+                } else {
+                    $output->writeln('<comment> - No Action for ' .
+                        $index->getName() . '/' . $type->getName() .
+                        '</comment>');
+                }
+            }
+        }
+
+        $output->writeln('');
+
+        $jobStats->setRestoreHandleMappings(
+            microtime(true) - $timeStartSection,
+            memory_get_usage(),
+            memory_get_usage() - $memoryAtSection);
+    }
 //
 //    /**
 //     * Stores mappings into filesystem
@@ -342,19 +366,19 @@ class RestoreBusinessCase
 //            memory_get_usage() - $memoryAtSection);
 //    }
 //
-//    /**
-//     * Stores jobs stats into json format in meta files
-//     *
-//     * @param BackupJob $job
-//     * @param JobStats $jobStats
-//     * @param OutputInterface $output
-//     * @author Daniel Wendlandt
-//     */
-//    private function storeJobStats(BackupJob $job, JobStats $jobStats, OutputInterface $output)
-//    {
-//        $this->filesystem->storeJobStats($job->getPath(), $jobStats);
-//        $output->writeln('<info>*** Stored job-stats to file ***</info>' . PHP_EOL);
-//    }
+    /**
+     * Stores jobs stats into json format in meta files
+     *
+     * @param RestoreJob $job
+     * @param JobStats $jobStats
+     * @param OutputInterface $output
+     * @author Daniel Wendlandt
+     */
+    private function storeJobStats(RestoreJob $job, JobStats $jobStats, OutputInterface $output)
+    {
+        $this->filesystem->storeRestoreJobStats($job->getPath(), $jobStats);
+        $output->writeln('<info>*** Stored job-stats to file ***</info>' . PHP_EOL);
+    }
 //
 //    /**
 //     * Stores config to yml config
@@ -393,26 +417,26 @@ class RestoreBusinessCase
 //        $output->writeln('<info>*** Stored backup-config to file im yaml format ***</info>' . PHP_EOL);
 //    }
 //
-//    /**
-//     * Gets the content for the resultline
-//     *
-//     * @param JobStats $jobStats
-//     * @return string
-//     * @author Daniel Wendlandt
-//     */
-//    private function getResultLineForOutput(JobStats $jobStats)
-//    {
-//        $line = '<info>Finished in <comment>%s</comment>'.
-//            ' - MemoryUsed: <comment>%s</comment>'.
-//            ' - MemoryUsage: <comment>%s</comment>'.
-//            ' - MemoryUsageReal: <comment>%s</comment></info>';
-//
-//        return sprintf($line,
-//            TimeTakenHelper::convert($jobStats->getTimeTaken()),
-//            DataSizeHelper::convert($jobStats->getMemoryUsed()),
-//            DataSizeHelper::convert($jobStats->getMemoryUsage()),
-//            DataSizeHelper::convert($jobStats->getMemoryUsageReal()));
-//    }
+    /**
+     * Gets the content for the resultline
+     *
+     * @param JobStats $jobStats
+     * @return string
+     * @author Daniel Wendlandt
+     */
+    private function getResultLineForOutput(JobStats $jobStats)
+    {
+        $line = '<info>Finished in <comment>%s</comment>'.
+            ' - MemoryUsed: <comment>%s</comment>'.
+            ' - MemoryUsage: <comment>%s</comment>'.
+            ' - MemoryUsageReal: <comment>%s</comment></info>';
+
+        return sprintf($line,
+            TimeTakenHelper::convert($jobStats->getTimeTaken()),
+            DataSizeHelper::convert($jobStats->getMemoryUsed()),
+            DataSizeHelper::convert($jobStats->getMemoryUsage()),
+            DataSizeHelper::convert($jobStats->getMemoryUsageReal()));
+    }
 
 
 }

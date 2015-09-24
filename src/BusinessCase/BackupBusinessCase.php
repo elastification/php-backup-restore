@@ -142,8 +142,6 @@ class BackupBusinessCase implements BackupBusinessCaseInterface
         $this->filesystem->symlinkLatestBackup($job->getPath());
         $output->writeln('<info>*** Symlinked ' . $job->getPath() . ' to latest ***</info>' . PHP_EOL);
 
-
-        //todo create yml config of this backup and put it into meta folder
         //store backup as config in config folder
         $this->storeBackupConfig($job, $output);
 
@@ -350,7 +348,7 @@ class BackupBusinessCase implements BackupBusinessCaseInterface
      */
     private function storeJobStats(BackupJob $job, JobStats $jobStats, OutputInterface $output)
     {
-        $this->filesystem->storeJobStats($job->getPath(), $jobStats);
+        $this->filesystem->storeBackupJobStats($job->getPath(), $jobStats);
         $output->writeln('<info>*** Stored job-stats to file ***</info>' . PHP_EOL);
     }
 

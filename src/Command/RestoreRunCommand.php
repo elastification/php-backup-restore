@@ -104,9 +104,8 @@ class RestoreRunCommand extends Command
         }
 
         $restoreJob = $restoreBusinessCase->createJob($source, $host, $port);
-
         $strategy = $this->askForRestoreStrategy($input, $output, $restoreJob);
-
+        $restoreJob->setStrategy($strategy);
 
         $this->runJob($input, $output, $restoreBusinessCase, $restoreJob);
     }
@@ -116,45 +115,45 @@ class RestoreRunCommand extends Command
      *
      * @param InputInterface $input
      * @param OutputInterface $output
-     * @param BackupBusinessCase $backupBusinessCase
-     * @param BackupJob $backupJob
+     * @param RestoreBusinessCase $restoreBusinessCase
+     * @param RestoreJob $restoreJob
      * @param bool $askForProceeding
      * @author Daniel Wendlandt
      */
     private function runJob(
         InputInterface $input,
         OutputInterface $output,
-        BackupBusinessCase $backupBusinessCase,
-        BackupJob $backupJob,
+        RestoreBusinessCase $restoreBusinessCase,
+        RestoreJob $restoreJob,
         $askForProceeding = true
     ) {
         if(!$askForProceeding) {
-            $backupBusinessCase->execute($backupJob, $output);
+            $restoreBusinessCase->execute($restoreJob, $output);
             return;
         }
 
         if(!$proceed = $this->askForProceeding($input, $output)) {
             $output->writeln('<error>Aborted !!!</error>');
         } else {
-            $backupBusinessCase->execute($backupJob, $output);
+            $restoreBusinessCase->execute($restoreJob, $output);
         }
     }
 
-//    /**
-//     * Asks for going on with the backup
-//     *
-//     * @param InputInterface $input
-//     * @param OutputInterface $output
-//     * @return mixed
-//     * @author Daniel Wendlandt
-//     */
-//    private function askForProceeding(InputInterface $input, OutputInterface $output)
-//    {
-//        $helper = $this->getHelper('question');
-//        $question = new ConfirmationQuestion('<info>Do want to proceed with the backup?</info> [<comment>y/n</comment>]:');
-//
-//        return $helper->ask($input, $output, $question);
-//    }
+    /**
+     * Asks for going on with the backup
+     *
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return mixed
+     * @author Daniel Wendlandt
+     */
+    private function askForProceeding(InputInterface $input, OutputInterface $output)
+    {
+        $helper = $this->getHelper('question');
+        $question = new ConfirmationQuestion('<info>Do want to proceed with the backup?</info> [<comment>y/n</comment>]:');
+
+        return $helper->ask($input, $output, $question);
+    }
 
     /**
      * Asks for source path

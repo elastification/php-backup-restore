@@ -131,7 +131,7 @@ class RestoreStrategy
                 $mappingAction->setSourceIndex($index->getName());
                 $mappingAction->setSourceType($type->getName());
                 $mappingAction->setTargetIndex($index->getName());
-                $mappingAction->setSourceType($type->getName());
+                $mappingAction->setTargetType($type->getName());
 
                 $this->addMappingAction($mappingAction);
             }

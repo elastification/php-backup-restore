@@ -20,6 +20,7 @@ use Symfony\Component\Filesystem\Filesystem;
 
 interface FilesystemRepositoryInterface
 {
+    const DIR_SUB_RESTORE = 'restore';
     const DIR_META = 'meta';
     const DIR_SCHEMA = 'schema';
     const DIR_DATA = 'data';
@@ -91,7 +92,16 @@ interface FilesystemRepositoryInterface
      * @param JobStats $jobStats
      * @author Daniel Wendlandt
      */
-    public function storeJobStats($path, JobStats $jobStats);
+    public function storeBackupJobStats($path, JobStats $jobStats);
+
+    /**
+     * Stores job statistics as json to file
+     *
+     * @param string $path
+     * @param JobStats $jobStats
+     * @author Daniel Wendlandt
+     */
+    public function storeRestoreJobStats($path, JobStats $jobStats);
 
     /**
      * Stores the backup config as yml

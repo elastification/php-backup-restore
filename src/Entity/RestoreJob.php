@@ -16,6 +16,11 @@ class RestoreJob extends AbstractJob
      */
     private $source;
 
+    /**
+     * @var RestoreStrategy
+     */
+    private $strategy;
+
 
     public function __construct()
     {
@@ -47,6 +52,22 @@ class RestoreJob extends AbstractJob
     public function setSource($source)
     {
         $this->source = $source;
+    }
+
+    /**
+     * @return RestoreStrategy
+     */
+    public function getStrategy()
+    {
+        return $this->strategy;
+    }
+
+    /**
+     * @param RestoreStrategy $strategy
+     */
+    public function setStrategy(RestoreStrategy $strategy)
+    {
+        $this->strategy = $strategy;
     }
 
 }

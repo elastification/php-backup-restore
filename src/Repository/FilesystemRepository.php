@@ -209,7 +209,7 @@ class FilesystemRepository implements FilesystemRepositoryInterface
      * @param JobStats $jobStats
      * @author Daniel Wendlandt
      */
-    public function storeJobStats($path, JobStats $jobStats)
+    public function storeBackupJobStats($path, JobStats $jobStats)
     {
         $filepath = $path .
             DIRECTORY_SEPARATOR .
@@ -217,6 +217,33 @@ class FilesystemRepository implements FilesystemRepositoryInterface
             DIRECTORY_SEPARATOR .
             self::FILENAME_JOB_STATS .
             self::FILE_EXTENSION;
+
+        $this->filesytsem->dumpFile($filepath, json_encode($jobStats->toArray()));
+    }
+
+    /**
+     * Stores job statistics as json to file
+     *
+     * @param string $path
+     * @param JobStats $jobStats
+     * @author Daniel Wendlandt
+     */
+    public function storeRestoreJobStats($path, JobStats $jobStats)
+    {
+        $folderpath = $path .
+            DIRECTORY_SEPARATOR .
+            self::DIR_META .
+            DIRECTORY_SEPARATOR .
+            self::DIR_SUB_RESTORE;
+
+        $filepath = $folderpath .
+            DIRECTORY_SEPARATOR .
+            self::FILENAME_JOB_STATS .
+            self::FILE_EXTENSION;
+
+        if(!$this->filesytsem->exists($folderpath)) {
+            $this->filesytsem->mkdir($folderpath);
+        }
 
         $this->filesytsem->dumpFile($filepath, json_encode($jobStats->toArray()));
     }
