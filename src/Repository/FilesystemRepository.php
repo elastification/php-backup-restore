@@ -319,9 +319,12 @@ class FilesystemRepository implements FilesystemRepositoryInterface
             throw new \Exception('Schema folder does not exist in ' . $filepath);
         }
 
+        /** @var Finder $finder */
+        $finder = new $this->finder;
+
         $indices = array();
         /** @var SplFileInfo $file */
-        foreach($this->finder->files()->in($schemaFolderPath)->name('*' . self::FILE_EXTENSION) as $file) {
+        foreach($finder->files()->in($schemaFolderPath)->name('*' . self::FILE_EXTENSION) as $file) {
             $indexName = $file->getRelativePath();
 
             if(!isset($indices[$indexName])) {
@@ -337,7 +340,7 @@ class FilesystemRepository implements FilesystemRepositoryInterface
             //perform type;
             $type = new Mappings\Type();
             $type->setName($file->getBasename(self::FILE_EXTENSION));
-            $type->setSchema(json_decode(file_get_contents($file->getPathname()), true));
+            $type->setSchema(json_decode($file->getContents(), true));
 
             $index->addType($type);
         }
@@ -346,6 +349,36 @@ class FilesystemRepository implements FilesystemRepositoryInterface
         $mappings->setIndices($indices);
 
         return $mappings;
+    }
+
+    /**
+     * Loads all files for a index/type
+     *
+     * @param string $path
+     * @param string $index
+     * @param string $type
+     * @return null|Finder
+     * @author Daniel Wendlandt
+     */
+    public function loadDataFiles($path, $index, $type)
+    {
+        /** @var Finder $finder */
+        $finder = new $this->finder;
+
+        $dataPath = $path .
+            DIRECTORY_SEPARATOR .
+            self::DIR_DATA .
+            DIRECTORY_SEPARATOR .
+            $index .
+            DIRECTORY_SEPARATOR .
+            $type;
+
+        try {
+            return $finder->files()->in($dataPath)->name('*' . self::FILE_EXTENSION);
+        } catch(\InvalidArgumentException $exception) {
+            return null;
+        }
+
     }
 }
 

@@ -23,6 +23,8 @@ use Elastification\BackupRestore\Repository\FilesystemRepositoryInterface;
 use Elastification\Client\Exception\ClientException;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Finder\Finder;
+use Symfony\Component\Finder\SplFileInfo;
 use Symfony\Component\Yaml\Dumper;
 
 class RestoreBusinessCase
@@ -132,6 +134,8 @@ class RestoreBusinessCase
         $this->handleMappings($job, $jobStats, $output);
 
         //SECTION restore_data
+        $this->restoreData($job, $jobStats, $output);
+
 
         //Section store_meta_data
 //        $this->storeMetaData($job, $jobStats, $storedStats, $output);
@@ -209,46 +213,96 @@ class RestoreBusinessCase
             memory_get_usage(),
             memory_get_usage() - $memoryAtSection);
     }
-//
-//    /**
-//     * Stores mappings into filesystem
-//     *
-//     * @param BackupJob $job
-//     * @param JobStats $jobStats
-//     * @param OutputInterface $output
-//     * @author Daniel Wendlandt
-//     */
-//    private function storeMappings(BackupJob $job, JobStats $jobStats, OutputInterface $output)
-//    {
-//        $memoryAtSection = memory_get_usage();
-//        $timeStartSection = microtime(true);
-//
-//        $mappingFilesCreated = $this->filesystem->storeMappings($job->getPath(), $job->getMappings());
-//
-//        $jobStats->setStoreMappings(
-//            microtime(true) - $timeStartSection,
-//            memory_get_usage(),
-//            memory_get_usage() - $memoryAtSection,
-//            array('mappingFilesCreated' => $mappingFilesCreated));
-//
-//        $output->writeln('<info>*** Stored ' . $mappingFilesCreated . ' mapping files ***</info>' . PHP_EOL);
-//
-//        /** @var Index $index */
-//        foreach($job->getMappings()->getIndices() as $index) {
-//            /** @var Type $type */
-//            foreach ($index->getTypes() as $type) {
-//                $output->writeln(
-//                    '<comment> - ' .
-//                    $index->getName() .
-//                    DIRECTORY_SEPARATOR.
-//                    $type->getName().
-//                    FilesystemRepository::FILE_EXTENSION .
-//                    '</comment>');
-//            }
-//        }
-//
-//        $output->writeln('');
-//    }
+
+    private function restoreData(RestoreJob $job, JobStats $jobStats, OutputInterface $output)
+    {
+        $memoryAtSection = memory_get_usage();
+        $timeStartSection = microtime(true);
+
+        $output->writeln('<info>*** Starting with data restoring ***</info>' . PHP_EOL);
+
+        $storedStats = array();
+
+        /** @var Index $index */
+        foreach($job->getMappings()->getIndices() as $index) {
+            $toIndex = null;
+            /** @var Type $type */
+            foreach($index->getTypes() as $type) {
+                /** @var Finder $finder */
+                $finder = $this->filesystem->loadDataFiles($job->getPath(), $index->getName(), $type->getName());
+
+                if(null === $finder) {
+                    continue;
+                }
+
+                if(!isset($storedStats[$index->getName()])) {
+                    $storedStats[$index->getName()] = array();
+                }
+
+                if(!isset($storedStats[$index->getName()][$type->getName()])) {
+                    $storedStats[$index->getName()][$type->getName()] = array(
+                        'filesRead' => 0,
+                        'dataInType' => 0
+                    );
+                }
+
+                $mappingAction = $job->getStrategy()->getMapping($index->getName(), $type->getName());
+
+                if(null === $mappingAction) {
+                    throw new \Exception(
+                        'Mapping action missing for "' . $index->getName() . '/' . $type->getName() . '"');
+                }
+
+                $docCount = $finder->count();
+
+                $output->writeln('<comment>Store Data for:</comment>');
+                $output->writeln('<comment> [from]' . $index->getName() . '/' . $type->getName() . '</comment>');
+                $output->writeln('<comment> [to]' . $mappingAction->getTargetIndex() .
+                    '/' . $mappingAction->getTargetType() . '</comment>' . PHP_EOL);
+
+                $progress = new ProgressBar($output, $docCount);
+                $progress->setFormat('debug');
+
+                $progress->display();
+                $progress->start();
+
+                /** @var SplFileInfo $file */
+                foreach($finder as $file) {
+
+                    $data = json_decode($file->getContents(), true);
+                    $id = $data['_id'];
+
+                    $this->elastic->createDocument(
+                        $mappingAction->getTargetIndex(),
+                        $mappingAction->getTargetType(),
+                        $id,
+                        $data['_source'],
+                        $job->getHost(),
+                        $job->getPort());
+
+                    $progress->advance();
+                    $storedStats[$index->getName()][$type->getName()]['filesRead']++;
+                }
+
+                $progress->finish();
+                $output->writeln(PHP_EOL);
+                $toIndex = $mappingAction->getTargetIndex();
+            }
+
+            $this->elastic->refreshIndex($toIndex, $job->getHost(), $job->getPort());
+        }
+
+        //add aggregated to storedStats for comparing later
+        $docStats = $this->elastic->getDocCountByIndexType($job->getHost(), $job->getPort());
+        foreach($storedStats as $indexName => $types) {
+            foreach($types as $typeName => $typeStats) {
+                $storedStats[$indexName][$typeName]['dataInType'] = $docStats->getDocCount($indexName, $typeName);
+            }
+        }
+
+        //todo add job stats and add stored stats to them
+    }
+
 //
 //    /**
 //     * Stores data into the filesystem and returns stored stats

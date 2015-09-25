@@ -88,5 +88,31 @@ interface ElasticsearchRepositoryInterface
      * @author Daniel Wendlandt
      */
     public function createMapping($index, $type, array $schema, $host, $port = 9200);
+
+    /**
+     * Creates a new document or updates existing one.
+     *
+     * @param string $index
+     * @param string $type
+     * @param string $id
+     * @param array $doc
+     * @param string $host
+     * @param int $port
+     * @return \Elastification\Client\Response\ResponseInterface
+     * @throws \Elastification\Client\Exception\RequestException
+     * @author Daniel Wendlandt
+     */
+    public function createDocument($index, $type, $id, array $doc, $host, $port = 9200);
+
+    /**
+     * Refreshes an index
+     *
+     * @param string $index
+     * @param string $host
+     * @param int $port
+     * @return \Elastification\Client\Response\ResponseInterface
+     * @author Daniel Wendlandt
+     */
+    public function refreshIndex($index, $host, $port = 9200);
 }
 

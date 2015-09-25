@@ -17,6 +17,7 @@ use Elastification\Client\Request\V1x\NodeInfoRequest;
 use Elastification\Client\Request\V1x\SearchRequest;
 use Elastification\Client\Response\V1x\NodeInfoResponse;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Finder\Finder;
 
 interface FilesystemRepositoryInterface
 {
@@ -138,6 +139,17 @@ interface FilesystemRepositoryInterface
      * @author Daniel Wendlandt
      */
     public function loadMappings($filepath);
+
+    /**
+     * Loads all files for a index/type
+     *
+     * @param string $path
+     * @param string $index
+     * @param string $type
+     * @return Finder
+     * @author Daniel Wendlandt
+     */
+    public function loadDataFiles($path, $index, $type);
 
 }
 

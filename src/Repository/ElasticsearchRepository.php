@@ -13,10 +13,12 @@ use Elastification\BackupRestore\Entity\ServerInfo;
 use Elastification\BackupRestore\Helper\VersionHelper;
 use Elastification\BackupRestore\Repository\ElasticQuery\QueryInterface;
 use Elastification\Client\Exception\ClientException;
+use Elastification\Client\Request\V1x\CreateDocumentRequest;
 use Elastification\Client\Request\V1x\Index\CreateMappingRequest;
 use Elastification\Client\Request\V1x\NodeInfoRequest;
 use Elastification\Client\Request\V1x\SearchRequest;
 use Elastification\Client\Request\V1x\SearchScrollRequest;
+use Elastification\Client\Request\V1x\UpdateDocumentRequest;
 use Elastification\Client\Response\V1x\NodeInfoResponse;
 use Elastification\Client\Response\V1x\SearchResponse;
 
@@ -223,7 +225,6 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
     public function createMapping($index, $type, array $schema, $host, $port = 9200)
     {
         $client = $this->getClient($host, $port);
-        /** @var SearchResponse $response */
 
         //delete existing one
         $deleteRequestClassName = $this->getRequestClass('Index\\DeleteIndexRequest');
@@ -254,6 +255,52 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
         $request->setBody($schema);
 
         $client->send($request);
+    }
+
+    /**
+     * Creates a new document or updates existing one.
+     *
+     * @param string $index
+     * @param string $type
+     * @param string $id
+     * @param array $doc
+     * @param string $host
+     * @param int $port
+     * @return \Elastification\Client\Response\ResponseInterface
+     * @throws \Elastification\Client\Exception\RequestException
+     * @author Daniel Wendlandt
+     */
+    public function createDocument($index, $type, $id, array $doc, $host, $port = 9200)
+    {
+        $client = $this->getClient($host, $port);
+
+        $updateDocRequestClassName = $this->getRequestClass('UpdateDocumentRequest');
+        /** @var UpdateDocumentRequest $updateDocRequest */
+        $updateDocRequest = new $updateDocRequestClassName($index, $type, $this->getSerializer());
+
+        $updateDocRequest->setId($id);
+        $updateDocRequest->setBody($doc);
+
+        return $client->send($updateDocRequest);
+    }
+
+    /**
+     * Refreshes an index
+     *
+     * @param string $index
+     * @param string $host
+     * @param int $port
+     * @return \Elastification\Client\Response\ResponseInterface
+     * @author Daniel Wendlandt
+     */
+    public function refreshIndex($index, $host, $port = 9200)
+    {
+        $client = $this->getClient($host, $port);
+
+        $refreshIndexRequestClassName = $this->getRequestClass('Index\\RefreshIndexRequest');
+        $refreshIndexRequest = new $refreshIndexRequestClassName($index, null, $this->getSerializer());
+
+        return $client->send($refreshIndexRequest);
     }
 
     /**

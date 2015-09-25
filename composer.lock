@@ -9,16 +9,16 @@
     "packages": [
         {
             "name": "elastification/php-client",
-            "version": "0.10.0",
+            "version": "0.10.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/elastification/php-client.git",
-                "reference": "5593b8e99cc91bc8419fbc4b2b89ab5fbed82246"
+                "reference": "b8e92a7be366af66d4cd23b6b65604235f677c40"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/elastification/php-client/zipball/5593b8e99cc91bc8419fbc4b2b89ab5fbed82246",
-                "reference": "5593b8e99cc91bc8419fbc4b2b89ab5fbed82246",
+                "url": "https://api.github.com/repos/elastification/php-client/zipball/b8e92a7be366af66d4cd23b6b65604235f677c40",
+                "reference": "b8e92a7be366af66d4cd23b6b65604235f677c40",
                 "shasum": ""
             },
             "require": {
@@ -64,7 +64,7 @@
                 "nosql",
                 "thrift"
             ],
-            "time": "2015-09-17 14:06:26"
+            "time": "2015-09-25 06:21:32"
         },
         {
             "name": "guzzlehttp/guzzle",
