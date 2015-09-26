@@ -20,12 +20,10 @@ use Elastification\BackupRestore\Repository\ElasticsearchRepository;
 use Elastification\BackupRestore\Repository\ElasticsearchRepositoryInterface;
 use Elastification\BackupRestore\Repository\FilesystemRepository;
 use Elastification\BackupRestore\Repository\FilesystemRepositoryInterface;
-use Elastification\Client\Exception\ClientException;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
-use Symfony\Component\Yaml\Dumper;
 
 class RestoreBusinessCase
 {
@@ -134,15 +132,19 @@ class RestoreBusinessCase
         $this->handleMappings($job, $jobStats, $output);
 
         //SECTION restore_data
-        $this->restoreData($job, $jobStats, $output);
+        $storedStats = $this->restoreData($job, $jobStats, $output);
 
 
+        //todo hanle restore meta data
         //Section store_meta_data
 //        $this->storeMetaData($job, $jobStats, $storedStats, $output);
 
         //todo create yml config of this backup and put it into meta folder
         //store backup as config in config folder
 //        $this->storeBackupConfig($job, $output);
+        if($job->isCreateConfig()) {
+            $this->storeConfig($job, $output);
+        }
 
         //handle jobs stats and tore it to filesystem
         $jobStats->setTimeTaken(microtime(true) - $timeStart);
@@ -262,7 +264,6 @@ class RestoreBusinessCase
 
                 $progress = new ProgressBar($output, $docCount);
                 $progress->setFormat('debug');
-
                 $progress->display();
                 $progress->start();
 
@@ -300,126 +301,14 @@ class RestoreBusinessCase
             }
         }
 
-        //todo add job stats and add stored stats to them
+        $jobStats->setRestoreData(microtime(true) - $timeStartSection,
+            memory_get_usage(),
+            memory_get_usage() - $memoryAtSection,
+            array('storedStats' => $storedStats));
+
+        return $storedStats;
     }
 
-//
-//    /**
-//     * Stores data into the filesystem and returns stored stats
-//     *
-//     * @param BackupJob $job
-//     * @param JobStats $jobStats
-//     * @param OutputInterface $output
-//     * @return array
-//     * @author Daniel Wendlandt
-//     */
-//    private function storeData(BackupJob $job, JobStats $jobStats, OutputInterface $output)
-//    {
-//        $memoryAtSection = memory_get_usage();
-//        $timeStartSection = microtime(true);
-//
-//        $output->writeln('<info>*** Starting with data storing ***</info>' . PHP_EOL);
-//
-//        $docCount = $this->elastic->getDocCountByIndexType(
-//            $job->getHost(),
-//            $job->getPort(),
-//            $job->getMappings()->countIndices());
-//
-//        $storedStats = array();
-//
-//        /** @var Index $index */
-//        foreach($job->getMappings()->getIndices() as $index) {
-//            if(0 === $docCount->getDocCount($index->getName())) {
-//                continue;
-//            }
-//
-//            /** @var Type $type */
-//            foreach($index->getTypes() as $type) {
-//                $docsInType = $docCount->getDocCount($index->getName(), $type->getName());
-//
-//                if(0 === $docsInType) {
-//                    continue;
-//                }
-//
-//                $scrollId = $this->elastic->createScrollSearch(
-//                    $index->getName(),
-//                    $type->getName(),
-//                    $job->getHost(),
-//                    $job->getPort());
-//
-//                $storedStats[$index->getName()][$type->getName()]['aggregatedNumberOfDocs'] = $docsInType;
-//                $storedStats[$index->getName()][$type->getName()]['storedNumberOfDocs'] = 0;
-//
-//                $output->writeln('<comment>Store Data for: ' . $index->getName() . '/' . $type->getName() . '</comment>');
-//
-//                $progress = new ProgressBar($output, $docsInType);
-//                $progress->setFormat('debug');
-//
-//                $progress->display();
-//                $progress->start();
-//
-//                try {
-//                    while (
-//                        !empty($data = $this->elastic->getScrollSearchData($scrollId, $job->getHost(), $job->getPort()))
-//                    ) {
-//                        $storedDocs = $this->filesystem->storeData(
-//                            $job->getPath(),
-//                            $index->getName(),
-//                            $type->getName(),
-//                            $data);
-//
-//                        $storedStats[$index->getName()][$type->getName()]['storedNumberOfDocs'] += $storedDocs;
-//                        $progress->advance($storedDocs);
-//                    }
-//                } catch(ClientException $exception) {
-//                    //do nothing here
-//                }
-//
-//                $progress->finish();
-//                $output->writeln(PHP_EOL);
-//            }
-//        }
-//
-//
-//        $jobStats->setStoreData(
-//            microtime(true) - $timeStartSection,
-//            memory_get_usage(),
-//            memory_get_usage() - $memoryAtSection,
-//            array('stats' => $storedStats));
-//
-//        return $storedStats;
-//    }
-//
-//    /**
-//     * Stores meta data to backup folder
-//     *
-//     * @param BackupJob $job
-//     * @param JobStats $jobStats
-//     * @param array $storedStats
-//     * @param OutputInterface $output
-//     * @author Daniel Wendlandt
-//     */
-//    private function storeMetaData(BackupJob $job, JobStats $jobStats, array $storedStats, OutputInterface $output)
-//    {
-//        $memoryAtSection = memory_get_usage();
-//        $timeStartSection = microtime(true);
-//
-//        $output->writeln('<info>*** Starting with meta data storing ***</info>' . PHP_EOL);
-//
-//        $this->filesystem->storeServerInfo($job->getPath(), $job->getServerInfo());
-//        $output->writeln('<comment> - Stored server-info file</comment>' . PHP_EOL);
-//
-//        $this->filesystem->storeStoredStats($job->getPath(), $storedStats);
-//        $output->writeln('<comment> - Stored stored-stats file</comment>' . PHP_EOL);
-//
-//        $output->writeln('');
-//
-//        $jobStats->setStoreMetaData(
-//            microtime(true) - $timeStartSection,
-//            memory_get_usage(),
-//            memory_get_usage() - $memoryAtSection);
-//    }
-//
     /**
      * Stores jobs stats into json format in meta files
      *
@@ -433,44 +322,45 @@ class RestoreBusinessCase
         $this->filesystem->storeRestoreJobStats($job->getPath(), $jobStats);
         $output->writeln('<info>*** Stored job-stats to file ***</info>' . PHP_EOL);
     }
-//
-//    /**
-//     * Stores config to yml config
-//     *
-//     * @param BackupJob $job
-//     * @param OutputInterface $output
-//     * @author Daniel Wendlandt
-//     */
-//    private function storeBackupConfig(BackupJob $job, OutputInterface $output)
-//    {
-//        $indices = array();
-//
-//        /** @var Index $index */
-//        foreach($job->getMappings()->getIndices() as $index) {
-//            /** @var Type $type */
-//            foreach($index->getTypes() as $type) {
-//                $indices[] = array(
-//                    'index' => $index->getName(),
-//                    'type' => $type->getName()
-//                );
-//            }
-//        }
-//
-//        $config = array(
-//            'name' => $job->getName(),
-//            'target' => $job->getTarget(),
-//            'host' => $job->getHost(),
-//            'port' => $job->getPort(),
-//            'indices' => $indices,
-//            'created_at' => $job->getCreatedAt()->format('Y-m-d H:i:s')
-//
-//        );
-//
-//        $this->filesystem->storeBackupConfig($job->getPath(), $config);
-//
-//        $output->writeln('<info>*** Stored backup-config to file im yaml format ***</info>' . PHP_EOL);
-//    }
-//
+
+    /**
+     * Stores config to yml config
+     *
+     * @param RestoreJob $job
+     * @param OutputInterface $output
+     * @author Daniel Wendlandt
+     */
+    private function storeConfig(RestoreJob $job, OutputInterface $output)
+    {
+        $mappingActions = array();
+
+        foreach($job->getStrategy()->getMappings() as $types) {
+            /** @var RestoreStrategy\MappingAction $mappingAction */
+            foreach($types as $mappingAction) {
+                $mappingActions[] = $mappingAction->toArray();
+            }
+        }
+
+        $config = array(
+            'name' => $job->getName(),
+            'source' => $job->getSource(),
+            'host' => $job->getHost(),
+            'port' => $job->getPort(),
+            'create_config' => $job->isCreateConfig(),
+            'config_name' => $job->getConfigName(),
+            'strategy' => array(
+                'strategy' => $job->getStrategy()->getStrategy(),
+                'mappings' => $mappingActions
+            ),
+            'created_at' => $job->getCreatedAt()->format('Y-m-d H:i:s')
+
+        );
+
+        $this->filesystem->storeRestoreConfig($job, $config);
+
+        $output->writeln('<info>*** Stored restore-config to file in yaml format ***</info>' . PHP_EOL);
+    }
+
     /**
      * Gets the content for the resultline
      *

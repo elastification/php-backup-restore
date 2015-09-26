@@ -10,6 +10,7 @@ namespace Elastification\BackupRestore\Repository;
 use Elastification\BackupRestore\Entity\IndexTypeStats;
 use Elastification\BackupRestore\Entity\JobStats;
 use Elastification\BackupRestore\Entity\Mappings;
+use Elastification\BackupRestore\Entity\RestoreJob;
 use Elastification\BackupRestore\Entity\ServerInfo;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
@@ -238,6 +239,7 @@ class FilesystemRepository implements FilesystemRepositoryInterface
 
         $filepath = $folderpath .
             DIRECTORY_SEPARATOR .
+            date('YmdHis') . '_' .
             self::FILENAME_JOB_STATS .
             self::FILE_EXTENSION;
 
@@ -262,6 +264,25 @@ class FilesystemRepository implements FilesystemRepositoryInterface
             self::DIR_CONFIG .
             DIRECTORY_SEPARATOR .
             self::FILENAME_CONFIG_BACKUP .
+            self::FILE_EXTENSION_CONFIG;
+
+        $this->filesytsem->dumpFile($filepath, $this->yamlDumper->dump($data, 5));
+    }
+
+    /**
+     * Stores the restore config as yml and by given name defined in job
+     *
+     * @param RestoreJob $job
+     * @param array $data
+     * @author Daniel Wendlandt
+     */
+    public function storeRestoreConfig(RestoreJob $job, array $data)
+    {
+        $filepath = $job->getPath() .
+            DIRECTORY_SEPARATOR .
+            self::DIR_CONFIG .
+            DIRECTORY_SEPARATOR .
+            $job->getConfigName() .
             self::FILE_EXTENSION_CONFIG;
 
         $this->filesytsem->dumpFile($filepath, $this->yamlDumper->dump($data, 5));

@@ -21,6 +21,15 @@ class RestoreJob extends AbstractJob
      */
     private $strategy;
 
+    /**
+     * @var bool
+     */
+    private $createConfig = true;
+
+    /**
+     * @var string
+     */
+    private $configName;
 
     public function __construct()
     {
@@ -69,5 +78,39 @@ class RestoreJob extends AbstractJob
     {
         $this->strategy = $strategy;
     }
+
+    /**
+     * @return boolean
+     */
+    public function isCreateConfig()
+    {
+        return $this->createConfig;
+    }
+
+    /**
+     * @param boolean $createConfig
+     */
+    public function setCreateConfig($createConfig)
+    {
+        $this->createConfig = (bool) $createConfig;
+    }
+
+    /**
+     * @return string
+     */
+    public function getConfigName()
+    {
+        return $this->configName;
+    }
+
+    /**
+     * @param string $configName
+     */
+    public function setConfigName($configName)
+    {
+        $this->configName = (string) $configName;
+    }
+
+
 
 }

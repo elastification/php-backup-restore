@@ -17,6 +17,7 @@ class JobStats
     const NAME_STORE_DATA = 'store_data';
     const NAME_STORE_META_DATA = 'store_meta_data';
     const NAME_RESTORE_HANDLE_MAPPINGS = 'restore_handle_mappings';
+    const NAME_RESTORE_DATA = 'restore_data';
 
     /**
      * @var array
@@ -121,6 +122,20 @@ class JobStats
     public function setRestoreHandleMappings($timeTaken, $memoryUsage, $memoryUsed, array $options = array())
     {
         $this->setData(self::NAME_RESTORE_HANDLE_MAPPINGS, $timeTaken, $memoryUsage, $memoryUsed, $options);
+    }
+
+    /**
+     * Sets the data for restore_data section
+     *
+     * @param double $timeTaken
+     * @param int $memoryUsage
+     * @param int $memoryUsed
+     * @param array $options
+     * @author Daniel Wendlandt
+     */
+    public function setRestoreData($timeTaken, $memoryUsage, $memoryUsed, array $options = array())
+    {
+        $this->setData(self::NAME_RESTORE_DATA, $timeTaken, $memoryUsage, $memoryUsed, $options);
     }
 
     /**

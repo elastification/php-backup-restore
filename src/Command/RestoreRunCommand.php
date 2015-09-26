@@ -107,6 +107,8 @@ class RestoreRunCommand extends Command
         $strategy = $this->askForRestoreStrategy($input, $output, $restoreJob);
         $restoreJob->setStrategy($strategy);
 
+        $this->askForStoringConfig($input, $output, $restoreJob);
+
         $this->runJob($input, $output, $restoreBusinessCase, $restoreJob);
     }
 
@@ -173,6 +175,15 @@ class RestoreRunCommand extends Command
         return $helper->ask($input, $output, $question);
     }
 
+    /**
+     * Aksing for strategy
+     *
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @param RestoreJob $job
+     * @return RestoreStrategy
+     * @author Daniel Wendlandt
+     */
     private function askForRestoreStrategy(InputInterface $input, OutputInterface $output, RestoreJob $job)
     {
         $strategies = array(
@@ -209,35 +220,36 @@ class RestoreRunCommand extends Command
         return $strategy;
     }
 
-//    /**
-//     * Asking for indeces/types wich should be used
-//     *
-//     * @param InputInterface $input
-//     * @param OutputInterface $output
-//     * @param BackupJob $job
-//     * @return mixed
-//     * @author Daniel Wendlandt
-//     */
-//    private function askForIndicesTypes(InputInterface $input, OutputInterface $output, BackupJob $job)
-//    {
-//        $mappings = array();
-//        $mappings[] = 'all';
-//
-//        /** @var Index $index */
-//        foreach($job->getMappings()->getIndices() as $index) {
-//            /** @var Type $type */
-//            foreach($index->getTypes() as $type) {
-//                $mappings[] = $index->getName() . '/' . $type->getName();
-//            }
-//        }
-//
-//        $helper = $this->getHelper('question');
-//        $question = new ChoiceQuestion('<info>Please select indices/types that should be dumped (separate multiple by colon)</info> [<comment>all</comment>]:', $mappings, '0');
-//        $question->setMultiselect(true);
-//
-//        return $helper->ask($input, $output, $question);
-//    }
-//
+    /**
+     * Asking for storing restore config
+     *
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @param RestoreJob $job
+     * @author Daniel Wendlandt
+     */
+    private function askForStoringConfig(InputInterface $input, OutputInterface $output, RestoreJob $job)
+    {
+        $helper = $this->getHelper('question');
+        $question = new ConfirmationQuestion(
+            '<info>Do you want to store the configuration after successfull restore ?</info> [<comment>y/n</comment>]:',
+            true);
+        $createConfig = $helper->ask($input, $output, $question);
+
+        if(!$createConfig) {
+            $output->writeln('<error>Not storing config</error>');
+            return;
+        }
+
+        $defaultName = date('YmdHis') . '_restore';
+        $nameQuestion = $this->getQuestion('Please give a name for the config file', $defaultName);
+
+        $configName = $helper->ask($input, $output, $nameQuestion);
+
+        $job->setCreateConfig($createConfig);
+        $job->setConfigName($configName);
+    }
+
     /**
      * Creates a question
      *

@@ -120,6 +120,23 @@ class MappingAction
         $this->targetType = $targetType;
     }
 
+    /**
+     * creates an array with underscored keys and values of this object
+     *
+     * @return array
+     * @author Daniel Wendlandt
+     */
+    public function toArray()
+    {
+        return array(
+            'strategy' => $this->strategy,
+            'source_index' => $this->sourceIndex,
+            'source_type' => $this->sourceType,
+            'target_index' => $this->targetIndex,
+            'target_type' => $this->targetType
+        );
+    }
+
 
 
 }

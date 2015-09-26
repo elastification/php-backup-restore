@@ -10,6 +10,7 @@ namespace Elastification\BackupRestore\Repository;
 use Elastification\BackupRestore\Entity\IndexTypeStats;
 use Elastification\BackupRestore\Entity\JobStats;
 use Elastification\BackupRestore\Entity\Mappings;
+use Elastification\BackupRestore\Entity\RestoreJob;
 use Elastification\BackupRestore\Entity\ServerInfo;
 use Elastification\BackupRestore\Helper\VersionHelper;
 use Elastification\BackupRestore\Repository\ElasticQuery\QueryInterface;
@@ -111,6 +112,15 @@ interface FilesystemRepositoryInterface
      * @author Daniel Wendlandt
      */
     public function storeBackupConfig($filepath, array $data);
+
+    /**
+     * Stores the restore config as yml and by given name defined in job
+     *
+     * @param RestoreJob $job
+     * @param array $data
+     * @author Daniel Wendlandt
+     */
+    public function storeRestoreConfig(RestoreJob $job, array $data);
 
     /**
      * Symlink given path to latest in file system
