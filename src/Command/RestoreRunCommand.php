@@ -78,31 +78,35 @@ class RestoreRunCommand extends Command
         $this->checkOptions($config, $host);
 
         $restoreBusinessCase = new RestoreBusinessCase();
-//
-//        //config given process
-//        if(null !== $config) {
-//            $configJob = $backupBusinessCase->createJobFromConfig($config, $host, $port);
-//
-//            $output->writeln('<info>Backup Source is:</info> <comment>' .
-//                $configJob->getHost() . ':' . $configJob->getPort() .
-//                '</comment>' . PHP_EOL);
-//            $output->writeln('<info>Indices/Types for this job are:</info>');
-//
-//            //display all index/type
-//            /** @var Index $index */
-//            foreach($configJob->getMappings()->getIndices() as $index) {
-//                /** @var Type $type */
-//                foreach($index->getTypes() as $type) {
-//                    $output->writeln('<comment> - ' . $index->getName() . '/' . $type->getName() . '</comment>');
-//                }
-//            }
-//            $output->writeln('');
-//
-//            $this->runJob($input, $output, $backupBusinessCase, $configJob);
-//            return;
-//        }
-//
-//
+
+        //config given process
+        if(null !== $config) {
+
+            $configJob = $restoreBusinessCase->createJobFromConfig($config, $host, $port);
+
+            $output->writeln('<info>Backup Source is:</info> <comment>' .
+                $configJob->getHost() . ':' . $configJob->getPort() .
+                '</comment>' . PHP_EOL);
+            $output->writeln('<info>Indices/Types Actions for this job are:</info>');
+
+            //display all index/type
+            /** @var Index $index */
+            foreach($configJob->getStrategy()->getMappings() as $types) {
+                /** @var RestoreStrategy\MappingAction $mappingAction */
+                foreach($types as $mappingAction) {
+                    $output->writeln('<comment> - [From] ' .
+                        $mappingAction->getSourceIndex() . '/' . $mappingAction->getSourceType() .
+                        ' -> [To] ' . $mappingAction->getTargetIndex() . '/' . $mappingAction->getTargetType() .
+                        '</comment>');
+                }
+            }
+            $output->writeln('');
+
+            $this->runJob($input, $output, $restoreBusinessCase, $configJob);
+            return;
+        }
+
+
         //custom process
         if(null === $source) {
             $source = $this->askForSource($input, $output);

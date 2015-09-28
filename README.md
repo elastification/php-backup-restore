@@ -18,5 +18,7 @@
 
 ./elastic-backup-restore backup:run --host 192.168.33.144 --port 9200 --target /tmp/my-backups
 
+./elastic-backup-restore restore:run --config /tmp/my-backups/20150928082014/config/20150928152350_restore.yml
+
 
 

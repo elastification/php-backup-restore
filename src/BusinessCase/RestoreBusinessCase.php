@@ -61,12 +61,11 @@ class RestoreBusinessCase
      * @param string $source
      * @param string $host
      * @param int $port
-     * @param array $mappings
      * @return RestoreJob
      * @throws \Exception
      * @author Daniel Wendlandt
      */
-    public function createJob($source, $host, $port = 9200, array $mappings = array())
+    public function createJob($source, $host, $port = 9200)
     {
         $restoreJob = new RestoreJob();
         $restoreJob->setHost($host);
@@ -77,8 +76,6 @@ class RestoreBusinessCase
         $restoreJob->setServerInfo($this->elastic->getServerInfo($host, $port));
         $restoreJob->setMappings($this->filesystem->loadMappings($restoreJob->getPath()));
 
-        //todo process mappings. Could be only make sense when receiving from config
-
         if(!VersionHelper::isVersionAllowed($restoreJob->getServerInfo()->version)) {
             throw new \Exception('Elasticsearch version ' .
                 $restoreJob->getServerInfo()->version .
@@ -88,31 +85,43 @@ class RestoreBusinessCase
         return $restoreJob;
     }
 
-//    /**
-//     * Creates a job from given config file in yaml format
-//     *
-//     * @param string $filepath
-//     * @param null|string $host
-//     * @param null|string $port
-//     * @return BackupJob
-//     * @throws \Exception
-//     * @author Daniel Wendlandt
-//     */
-//    public function createJobFromConfig($filepath, $host = null, $port = null)
-//    {
-//        $config = $this->filesystem->loadYamlConfig($filepath);
-//
-//        if(null === $host) {
-//            $host = $config['host'];
-//        }
-//
-//        if(null === $port) {
-//            $port = $config['port'];
-//        }
-//
-//        return $this->createJob($config['target'], $host, $port, $config['indices']);
-//    }
-//
+    /**
+     * Creates a job from given config file in yaml format
+     *
+     * @param string $filepath
+     * @param null|string $host
+     * @param null|string $port
+     * @return RestoreJob
+     * @throws \Exception
+     * @author Daniel Wendlandt
+     */
+    public function createJobFromConfig($filepath, $host = null, $port = null)
+    {
+        $config = $this->filesystem->loadYamlConfig($filepath);
+
+        if(null === $host) {
+            $host = $config['host'];
+        }
+
+        if(null === $port) {
+            $port = $config['port'];
+        }
+
+        $source = $config['source'] . DIRECTORY_SEPARATOR . $config['name'];
+
+        $job = $this->createJob($source, $host, $port);
+        $strategy = new RestoreStrategy();
+        $strategy->setStrategy($config['strategy']['strategy']);
+
+        foreach($config['strategy']['mappings'] as $actionConfig) {
+            $mappingAction = RestoreStrategy\MappingAction::createFromArray($actionConfig);
+            $strategy->addMappingAction($mappingAction);
+        }
+
+        $job->setStrategy($strategy);
+
+        return $job;
+    }
 
     /**
      * Loads possible target mappings

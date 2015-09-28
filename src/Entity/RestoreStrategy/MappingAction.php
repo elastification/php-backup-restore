@@ -38,6 +38,25 @@ class MappingAction
     private $targetType;
 
     /**
+     * Factory for creating object from array
+     *
+     * @param array $action
+     * @return MappingAction
+     * @author Daniel Wendlandt
+     */
+    public static function createFromArray(array $action)
+    {
+        $mappingAction = new MappingAction();
+        $mappingAction->setStrategy($action['strategy']);
+        $mappingAction->setSourceIndex($action['source_index']);
+        $mappingAction->setSourceType($action['source_type']);
+        $mappingAction->setTargetIndex($action['target_index']);
+        $mappingAction->setTargetType($action['target_type']);
+
+        return $mappingAction;
+    }
+
+    /**
      * @return string
      * @author Daniel Wendlandt
      */
@@ -136,8 +155,6 @@ class MappingAction
             'target_type' => $this->targetType
         );
     }
-
-
 
 }
 
