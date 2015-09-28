@@ -113,6 +113,19 @@ class RestoreBusinessCase
 //        return $this->createJob($config['target'], $host, $port, $config['indices']);
 //    }
 //
+
+    /**
+     * Loads possible target mappings
+     *
+     * @param RestoreJob $job
+     * @return \Elastification\BackupRestore\Entity\Mappings
+     * @author Daniel Wendlandt
+     */
+    public function getTargetMappings(RestoreJob $job)
+    {
+        return $this->elastic->getAllMappings($job->getHost(), $job->getPort());
+    }
+
     /**
      * Runs the specified job and returns job statistics
      *

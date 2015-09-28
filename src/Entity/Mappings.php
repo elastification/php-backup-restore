@@ -54,6 +54,22 @@ class Mappings
     }
 
     /**
+     * @return int
+     * @author Daniel Wendlandt
+     */
+    public function countTypes()
+    {
+        $numberOfTypes = 0;
+
+        /** @var Index $index */
+        foreach($this->indices as $index) {
+            $numberOfTypes += $index->countTypes();
+        }
+
+        return $numberOfTypes;
+    }
+
+    /**
      * Goes through all indices ans types and reduces them by given ones
      *
      * @param array $indicesTypes

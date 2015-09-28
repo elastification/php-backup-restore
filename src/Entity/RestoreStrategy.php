@@ -91,9 +91,14 @@ class RestoreStrategy
      */
     public function getMapping($index, $type)
     {
-        if(!isset($this->mappings[$index]) && !isset($this->mappings[$index][$type])) {
+        if(!isset($this->mappings[$index])) {
             return null;
         }
+
+        if(!isset($this->mappings[$index][$type])) {
+            return null;
+        }
+
 
         return $this->mappings[$index][$type];
     }
@@ -134,6 +139,40 @@ class RestoreStrategy
                 $mappingAction->setTargetType($type->getName());
 
                 $this->addMappingAction($mappingAction);
+            }
+        }
+    }
+
+    /**
+     * Returns the number of mapping actions
+     *
+     * @return int
+     * @author Daniel Wendlandt
+     */
+    public function countMappingActions()
+    {
+        $numberOfActions = 0;
+
+        foreach($this->mappings as $types) {
+            $numberOfActions += count($types);
+        }
+
+        return $numberOfActions;
+    }
+
+    /**
+     * Removes a mapping action
+     *
+     * @param MappingAction $mappingAction
+     * @author Daniel Wendlandt
+     */
+    public function removeMappingAction(MappingAction $mappingAction)
+    {
+        foreach($this->mappings as $indexName => $types) {
+            foreach($types as $typeName => $type) {
+                if($mappingAction === $type) {
+                    unset($this->mappings[$indexName][$typeName]);
+                }
             }
         }
     }

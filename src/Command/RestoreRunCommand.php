@@ -11,6 +11,7 @@ namespace Elastification\BackupRestore\Command;
 use Elastification\BackupRestore\BusinessCase\BackupBusinessCase;
 use Elastification\BackupRestore\BusinessCase\RestoreBusinessCase;
 use Elastification\BackupRestore\Entity\BackupJob;
+use Elastification\BackupRestore\Entity\Mappings;
 use Elastification\BackupRestore\Entity\Mappings\Index;
 use Elastification\BackupRestore\Entity\Mappings\Type;
 use Elastification\BackupRestore\Entity\RestoreJob;
@@ -27,6 +28,10 @@ use Symfony\Component\Console\Question\Question;
 
 class RestoreRunCommand extends Command
 {
+    /**
+     * @var Mappings
+     */
+    private $targetMappings;
 
     protected function configure()
     {
@@ -104,6 +109,7 @@ class RestoreRunCommand extends Command
         }
 
         $restoreJob = $restoreBusinessCase->createJob($source, $host, $port);
+        $this->targetMappings = $restoreBusinessCase->getTargetMappings($restoreJob);
         $strategy = $this->askForRestoreStrategy($input, $output, $restoreJob);
         $restoreJob->setStrategy($strategy);
 
@@ -215,7 +221,7 @@ class RestoreRunCommand extends Command
             return $strategy;
         }
 
-        //todo handle custom mappings here
+        $this->askForCustomMapping($input, $output, $job, $strategy);
 
         return $strategy;
     }
@@ -249,6 +255,200 @@ class RestoreRunCommand extends Command
         $job->setCreateConfig($createConfig);
         $job->setConfigName($configName);
     }
+
+    /**
+     * Asks for custom mapping
+     *
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @param RestoreJob $job
+     * @param RestoreStrategy $strategy
+     * @author Daniel Wendlandt
+     */
+    private function askForCustomMapping(InputInterface $input,
+                                         OutputInterface $output,
+                                         RestoreJob $job,
+                                         RestoreStrategy $strategy
+    ) {
+        $output->write(PHP_EOL);
+        $questions = array();
+
+        /** @var Index $index */
+        foreach($job->getMappings()->getIndices() as $index) {
+            /** @var Type $type */
+            foreach($index->getTypes() as $type) {
+                $mappingAction = $strategy->getMapping($index->getName(), $type->getName());
+                $targetMapping = (null !== $mappingAction)
+                    ? '<comment>'. $mappingAction->getStrategy() . ': ' . $mappingAction->getTargetIndex() . '/' . $mappingAction->getTargetType() . '</comment>'
+                    : '<error>not set</error>';
+
+                $questions[] = $index->getName() . '/' . $type->getName() . '[' . $targetMapping . ']';
+            }
+        }
+
+        $question = new ChoiceQuestion('<info>Please map all types from backup</info>', $questions);
+
+        $helper = $this->getHelper('question');
+        $answerSource = $helper->ask($input, $output, $question);
+        $indexType = explode('/', substr($answerSource, 0, strpos($answerSource, '[')));
+
+        if(null !== $existingMappingAction = $strategy->getMapping($indexType[0], $indexType[1])) {
+            $strategy->removeMappingAction($existingMappingAction);
+        }
+
+        $mappingAction = new RestoreStrategy\MappingAction();
+        $mappingAction->setSourceIndex($indexType[0]);
+        $mappingAction->setSourceType($indexType[1]);
+
+        $mappingAction = $this->askForTargetMapping($input, $output, $mappingAction);
+        $strategy->addMappingAction($mappingAction);
+
+        if($job->getMappings()->countTypes() != $strategy->countMappingActions()) {
+            $this->askForCustomMapping($input, $output, $job, $strategy);
+        }
+    }
+
+    /**
+     * Asks for target mapping. Divided into existing and custom sections
+     *
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @param RestoreStrategy\MappingAction $mappingAction
+     * @return RestoreStrategy\MappingAction
+     * @author Daniel Wendlandt
+     */
+    private function askForTargetMapping(InputInterface $input,
+                                         OutputInterface $output,
+                                         RestoreStrategy\MappingAction $mappingAction
+    ) {
+        $questions = array(
+            'Select existing Index/Type',
+            'Enter custom Index/Type'
+        );
+        $question = new ChoiceQuestion('<info>Please map all types from backup</info>', $questions);
+        $helper = $this->getHelper('question');
+        $answerTarget = $helper->ask($input, $output, $question);
+
+        //this is for selecting existing index/type
+        if($questions[0] == $answerTarget) {
+            $mappingAction = $this->askForExistingIndexType($input, $output, $mappingAction);
+
+            return $mappingAction;
+        }
+
+        //enter custom index/type
+        $mappingAction = $this->askForCustomIndexType($input, $output, $mappingAction);
+
+        return $mappingAction;
+
+    }
+
+    /**
+     * Ask for custom index and type names. Also sets startegy to reset
+     *
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @param RestoreStrategy\MappingAction $mappingAction
+     * @return RestoreStrategy\MappingAction
+     * @author Daniel Wendlandt
+     */
+    private function askForCustomIndexType(InputInterface $input,
+                                           OutputInterface $output,
+                                           RestoreStrategy\MappingAction $mappingAction
+    ) {
+        $output->write(PHP_EOL);
+        $output->writeln('<info>Please keep in mind that custom index/type will be treated with reset</info>' . PHP_EOL);
+
+        $helper = $this->getHelper('question');
+
+        $indexQuestion = new Question('<info>Enter the index name please: </info>');
+        $index = $helper->ask($input, $output, $indexQuestion);
+
+        $typeQuestion = new Question('<info>Enter the type name please: </info>');
+        $type = $helper->ask($input, $output, $typeQuestion);
+
+        $mappingAction->setTargetIndex($index);
+        $mappingAction->setTargetType($type);
+        $mappingAction->setStrategy(RestoreStrategy::STRATEGY_RESET);
+
+        return $mappingAction;
+    }
+
+    /**
+     * Forces User to select index/type from existing ones
+     *
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @param RestoreStrategy\MappingAction $mappingAction
+     * @return RestoreStrategy\MappingAction
+     * @author Daniel Wendlandt
+     */
+    private function askForExistingIndexType( InputInterface $input,
+                                              OutputInterface $output,
+                                              RestoreStrategy\MappingAction $mappingAction
+    ) {
+        $existingQuestions = array();
+
+        /** @var Index $index */
+        foreach($this->targetMappings->getIndices() as $index) {
+            /** @var Type $type */
+            foreach($index->getTypes() as $type) {
+                $existingQuestions[] = $index->getName() . '/' . $type->getName();
+            }
+        }
+
+        $questionExisting = new ChoiceQuestion(
+            'Please select one of this existing indices/types',
+            $existingQuestions);
+
+        $helper = $this->getHelper('question');
+        $answerExisting = $helper->ask($input, $output, $questionExisting);
+
+        $exploded = explode('/', $answerExisting);
+
+        $mappingAction->setTargetIndex($exploded[0]);
+        $mappingAction->setTargetType($exploded[1]);
+
+        $this->askForMappingStrategy($input, $output, $mappingAction);
+
+        return $mappingAction;
+    }
+
+    /**
+     * Asks for mapping action strategy.
+     *
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @param RestoreStrategy\MappingAction $mappingAction
+     * @return RestoreStrategy\MappingAction
+     * @author Daniel Wendlandt
+     */
+    private function askForMappingStrategy(InputInterface $input,
+                                           OutputInterface $output,
+                                           RestoreStrategy\MappingAction $mappingAction)
+    {
+        //ask for strategy
+        $strategyQuestions = array(
+            'Reset the Index. [Delete Type and create mapping and insert data from Backup]',
+            'Add data only. [Old type and mapping will be untouched and data will be put on top]'
+        );
+
+        $questionStrategy = new ChoiceQuestion(
+            'Please select the import strategy',
+            $strategyQuestions);
+        $helper = $this->getHelper('question');
+        $answerStrategy = $helper->ask($input, $output, $questionStrategy);
+
+        if($strategyQuestions[0] == $answerStrategy) {
+            $mappingAction->setStrategy(RestoreStrategy::STRATEGY_RESET);
+        } else {
+            $mappingAction->setStrategy(RestoreStrategy::STRATEGY_ADD);
+        }
+
+        return $mappingAction;
+    }
+
+
 
     /**
      * Creates a question
