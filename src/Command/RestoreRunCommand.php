@@ -8,16 +8,12 @@
 
 namespace Elastification\BackupRestore\Command;
 
-use Elastification\BackupRestore\BusinessCase\BackupBusinessCase;
 use Elastification\BackupRestore\BusinessCase\RestoreBusinessCase;
-use Elastification\BackupRestore\Entity\BackupJob;
 use Elastification\BackupRestore\Entity\Mappings;
 use Elastification\BackupRestore\Entity\Mappings\Index;
 use Elastification\BackupRestore\Entity\Mappings\Type;
 use Elastification\BackupRestore\Entity\RestoreJob;
 use Elastification\BackupRestore\Entity\RestoreStrategy;
-use Elastification\BackupRestore\Helper\VersionHelper;
-use Elastification\BackupRestore\Repository\ElasticsearchRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -181,7 +177,6 @@ class RestoreRunCommand extends Command
         $helper = $this->getHelper('question');
         $question = $this->getQuestion('Please enter the source path', $samplePath);
 
-        //todo check if source exists and folder structure. If not fine, repeat this questions. Think about auto complete
         return $helper->ask($input, $output, $question);
     }
 
@@ -475,6 +470,7 @@ class RestoreRunCommand extends Command
     /**
      * Checks if options are set correctly
      *
+     * @param $config
      * @param string $host
      * @throws \Exception
      * @author Daniel Wendlandt
@@ -484,10 +480,6 @@ class RestoreRunCommand extends Command
         if(null === $config && null === $host) {
             throw new \Exception('Please set config or host option');
         }
-
-//        if(null === $target) {
-//            throw new \Exception('Please set target option for full backup type');
-//        }
     }
 
 }
