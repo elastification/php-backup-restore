@@ -135,13 +135,10 @@ class RestoreBusinessCase
         $storedStats = $this->restoreData($job, $jobStats, $output);
 
 
-        //todo hanle restore meta data
         //Section store_meta_data
-//        $this->storeMetaData($job, $jobStats, $storedStats, $output);
+        $this->storeMetaData($job, $jobStats, $storedStats, $output);
 
-        //todo create yml config of this backup and put it into meta folder
         //store backup as config in config folder
-//        $this->storeBackupConfig($job, $output);
         if($job->isCreateConfig()) {
             $this->storeConfig($job, $output);
         }
@@ -309,6 +306,26 @@ class RestoreBusinessCase
         return $storedStats;
     }
 
+    public function storeMetaData(RestoreJob $job, JobStats $jobStats, array $storedStats, OutputInterface $output)
+    {
+        $memoryAtSection = memory_get_usage();
+        $timeStartSection = microtime(true);
+
+        $output->writeln('<info>*** Starting with meta data storing ***</info>' . PHP_EOL);
+
+        $this->filesystem->storeRestoreServerInfo($job->getPath(), $job->getCreatedAt(), $job->getServerInfo());
+        $output->writeln('<comment> - Stored server-info file</comment>' . PHP_EOL);
+
+        $this->filesystem->storeRestoreStoredStats($job->getPath(), $job->getCreatedAt(), $storedStats);
+        $output->writeln('<comment> - Stored stored-stats file</comment>' . PHP_EOL);
+
+        $output->writeln('');
+
+        $jobStats->setStoreMetaData(microtime(true) - $timeStartSection,
+            memory_get_usage(),
+            memory_get_usage() - $memoryAtSection,
+            array('storedStats' => $storedStats));
+    }
     /**
      * Stores jobs stats into json format in meta files
      *

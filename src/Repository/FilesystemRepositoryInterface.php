@@ -79,6 +79,16 @@ interface FilesystemRepositoryInterface
     public function storeServerInfo($path, ServerInfo $serverInfo);
 
     /**
+     * Stores restore server info as json
+     *
+     * @param string $path
+     * @param \DateTime $createdAt
+     * @param ServerInfo $serverInfo
+     * @author Daniel Wendlandt
+     */
+    public function storeRestoreServerInfo($path, \DateTime $createdAt, ServerInfo $serverInfo);
+
+    /**
      * Stores processed backup job stats
      *
      * @param string $path
@@ -86,6 +96,16 @@ interface FilesystemRepositoryInterface
      * @author Daniel Wendlandt
      */
     public function storeStoredStats($path, array $storedStats);
+
+    /**
+     * Stores restore processed backup job stats
+     *
+     * @param string $path
+     * @param \DateTime $createdAt
+     * @param array $storedStats
+     * @author Daniel Wendlandt
+     */
+    public function storeRestoreStoredStats($path, \DateTime $createdAt, array $storedStats);
 
     /**
      * Stores job statistics as json to file

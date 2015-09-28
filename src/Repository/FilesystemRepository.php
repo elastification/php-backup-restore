@@ -185,6 +185,64 @@ class FilesystemRepository implements FilesystemRepositoryInterface
     }
 
     /**
+     * Stores restore server info as json
+     *
+     * @param string $path
+     * @param \DateTime $createdAt
+     * @param ServerInfo $serverInfo
+     * @author Daniel Wendlandt
+     */
+    public function storeRestoreServerInfo($path, \DateTime $createdAt, ServerInfo $serverInfo)
+    {
+        $folderpath = $path .
+            DIRECTORY_SEPARATOR .
+            self::DIR_META .
+            DIRECTORY_SEPARATOR .
+            $createdAt->format('YmdHis_') .
+            self::DIR_SUB_RESTORE;
+
+        $filepath = $folderpath .
+            DIRECTORY_SEPARATOR.
+            self::FILENAME_SERVER_INFO .
+            self::FILE_EXTENSION;
+
+        if($this->filesytsem->exists($folderpath)) {
+            $this->filesytsem->mkdir($folderpath);
+        }
+
+        $this->filesytsem->dumpFile($filepath, json_encode($serverInfo));
+    }
+
+    /**
+     * Stores restore processed backup job stats
+     *
+     * @param string $path
+     * @param \DateTime $createdAt
+     * @param array $storedStats
+     * @author Daniel Wendlandt
+     */
+    public function storeRestoreStoredStats($path, \DateTime $createdAt, array $storedStats)
+    {
+        $folderpath = $path .
+            DIRECTORY_SEPARATOR .
+            self::DIR_META .
+            DIRECTORY_SEPARATOR .
+            $createdAt->format('YmdHis_') .
+            self::DIR_SUB_RESTORE;
+
+        $filepath = $folderpath .
+            DIRECTORY_SEPARATOR.
+            self::FILENAME_STORED_STATS .
+            self::FILE_EXTENSION;
+
+        if($this->filesytsem->exists($folderpath)) {
+            $this->filesytsem->mkdir($folderpath);
+        }
+
+        $this->filesytsem->dumpFile($filepath, json_encode($storedStats));
+    }
+
+    /**
      * Stores processed backup job stats
      *
      * @param string $path
