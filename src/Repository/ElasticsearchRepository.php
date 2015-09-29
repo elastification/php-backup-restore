@@ -209,7 +209,8 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
         /** @var SearchResponse $response */
         $response = $client->send($request);
 
-        return $response->getHitsHits();
+//        yield $response->getData()['_scroll_id'] => $response->getHitsHits();
+        return array('scrollId' => $response->getData()['_scroll_id'], 'hits' => $response->getHitsHits());
     }
 
     /**

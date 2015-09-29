@@ -276,22 +276,26 @@ class BackupBusinessCase implements BackupBusinessCaseInterface
                 $progress->display();
                 $progress->start();
 
-                try {
-                    while (
-                        !empty($data = $this->elastic->getScrollSearchData($scrollId, $job->getHost(), $job->getPort()))
-                    ) {
+
+                    while (true) {
+                        $data = $this->elastic->getScrollSearchData($scrollId, $job->getHost(), $job->getPort());
+
+                        if(0 === count($data['hits'])) {
+                            break;
+                        }
+
+                        $scrollId = $data['scrollId'];
                         $storedDocs = $this->filesystem->storeData(
                             $job->getPath(),
                             $index->getName(),
                             $type->getName(),
-                            $data);
+                            $data['hits']);
+
 
                         $storedStats[$index->getName()][$type->getName()]['storedNumberOfDocs'] += $storedDocs;
                         $progress->advance($storedDocs);
                     }
-                } catch(ClientException $exception) {
-                    //do nothing here
-                }
+
 
                 $progress->finish();
                 $output->writeln(PHP_EOL);
