@@ -75,6 +75,16 @@
         
     </li>
     
+    <li  class="parent">
+        <a href="#versions">Versions</a>
+        
+            <ul>
+                
+                
+            </ul>
+        
+    </li>
+    
 </ul>
             </div>
 
@@ -121,7 +131,19 @@ It makes the data available in the lucene search index. It does not store store 
                     <h1>Installation</h1>
                 
 
-            <p>No content here</p>
+            <p>To globally install the PHAR:</p>
+
+<pre><code>$ wget http://elastification.github.io/php-backup-restore/downloads/elastic-backup-restore.phar
+$ chmod +x elastic-backup-restore.phar
+$ sudo mv elastic-backup-restore.phar /usr/local/bin/elastic-backup-restore
+$ elastic-backup-restore
+</code></pre>
+
+<p>Only downloading the PHAR file directly:</p>
+
+<pre><code>$ wget http://elastification.github.io/php-backup-restore/downloads/elastic-backup-restore.phar
+$ php elastic-backup-restore.phar
+</code></pre>
 
         </section>
     
@@ -208,6 +230,30 @@ The restore task will ask you, if your not using a config file, to store your cu
 
 <pre><code>	./php-backup-restore.phar restore:run --config /tmp/-my-backups/20151001163526/config/restore-cfg.yml
 </code></pre>
+
+        </section>
+    
+
+    
+        <section id="versions" class="h1">
+            
+                    <h1>Versions</h1>
+                
+
+            <p><strong>Current Version: 0.1.0</strong></p>
+
+<p><a href="http://elastification.github.io/php-backup-restore/downloads/elastic-backup-restore.phar">[Download]</a> -  Created at: 2015-10-05</p>
+
+<hr />
+
+<p><strong>Version 0.1.0</strong></p>
+
+<p><a href="http://elastification.github.io/php-backup-restore/downloads/elastic-backup-restore-0.1.0.phar">[Download]</a> - Created at: 2015-10-05</p>
+
+<ul>
+  <li>First implementation of backup:run</li>
+  <li>First implementation of restore:run</li>
+</ul>
 
         </section>
     
