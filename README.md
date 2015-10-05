@@ -1,7 +1,6 @@
 # Elastification Php Backup And Restore
 
-This app dumps data from elasticsearch into your filesystem and you can restore it from there. You can easily define 
-new cases by interactive console.
+This app dumps data from elasticsearch into your filesystem and you can restore it from there. You can easily define new cases by interactive console.
 
 ---
 
