@@ -2,6 +2,9 @@
 
 This app dumps data from elasticsearch into your filesystem and you can restore it from there. You can easily define new cases by interactive console.
 
+
+For a more detailed documentation of this tool click: [Documentation](http://elastification.github.io/php-backup-restore/)
+
 ---
 
 ## How it is working
