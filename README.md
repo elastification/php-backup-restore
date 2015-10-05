@@ -30,7 +30,21 @@ For checking it, type that in your console:
 
 ## Installation
 
+To globally install the PHAR:
 
+```
+$ wget http://elastification.github.io/php-backup-restore/downloads/elastic-backup-restore.phar
+$ chmod +x elastic-backup-restore.phar
+$ sudo mv elastic-backup-restore.phar /usr/local/bin/elastic-backup-restore
+$ elastic-backup-restore
+```
+
+Only downloading the PHAR file directly:
+
+```
+$ wget http://elastification.github.io/php-backup-restore/downloads/elastic-backup-restore.phar
+$ php elastic-backup-restore.phar
+```
 
 ---
 
@@ -68,7 +82,7 @@ After a successful run of backup your data a configuration file will be written 
 	./php-backup-restore.phar backup:run --host localhost --target /tmp/-my-backups
 ```
 
-** Sample for config based backup**
+**Sample for config based backup**
 
 ```
 	./php-backup-restore.phar backup:run --config /tmp/-my-backups/20151001163526/config/backup-cfg.yml
@@ -95,7 +109,7 @@ The restore task will ask you, if your not using a config file, to store your cu
 	./php-backup-restore.phar restore:run --host localhost
 ```
 
-** Sample for config based restore**
+**Sample for config based restore**
 
 ```
 	./php-backup-restore.phar restore:run --config /tmp/-my-backups/20151001163526/config/restore-cfg.yml
