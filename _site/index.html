@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+<title>Elastification Php Backup Restore Documentation</title>
+<meta name="viewport" content="width=device-width">
+<meta name="author" content="DaWen">
+<link rel="stylesheet" href="css/main.css">
+<link href='http://fonts.googleapis.com/css?family=Source+Code+Pro:500,600' rel='stylesheet' type='text/css'>
+    </head>
+
+    <body>
+        <div class="container">
+            <div class="overview">
+                <span class="toggle">close</span>
+                <header>
+    <span>Elastification Php Backup Restore Documentation by DaWen V 0.1</span>
+</header>
+
+                <ul id="nav">
+    
+    
+    <li  class=" current">
+        <a href="#how-it-works">How it works</a>
+        
+    </li>
+    
+    <li  class="parent">
+        <a href="#requirements">Requirements</a>
+        
+            <ul>
+                
+                
+            </ul>
+        
+    </li>
+    
+    <li  class="parent">
+        <a href="#installation">Installation</a>
+        
+            <ul>
+                
+                
+            </ul>
+        
+    </li>
+    
+    <li  class="parent">
+        <a href="#usage-and-options">Usage And Options</a>
+        
+            <ul>
+                
+                
+                    <li class="parent">
+                        <a href="#usage-backup-run">Backup Run</a>
+                        
+                            <ul>
+                                
+                                
+                            </ul>
+                        
+                    </li>
+                
+                    <li class="parent">
+                        <a href="#usage-restore-run">Restore Run</a>
+                        
+                            <ul>
+                                
+                                
+                            </ul>
+                        
+                    </li>
+                
+            </ul>
+        
+    </li>
+    
+</ul>
+            </div>
+
+            <div class="content">
+                <span class="toggle">open</span>
+                
+
+    
+        <section id="how-it-works" class="h1">
+            
+                    <h1>How it works</h1>
+                
+
+            <p>A backup will create a new folder in the specified target. The new folder name will look like <em>20151001121014</em>.<br />
+That folder contains different subdirs like data, meta, schema.</p>
+
+<p>The restore will work on the previous stored backup folder. (Example: <em>/tmp/my-backup-for-production/20151001121014</em>)<br />
+It is operating on stored files and starts importing everything after a short configuration<br />
+Afte every successful imported index a refresh command will be run on that index.<br />
+It makes the data available in the lucene search index. It does not store store data on disk. For that it will be better to perform a flush command by curl.</p>
+
+        </section>
+    
+
+    
+        <section id="requirements" class="h1">
+            
+                    <h1>Requirements</h1>
+                
+
+            <p>You need php to be installed in a minimum version of 5.5.</p>
+
+<p>For checking it, type that in your console:</p>
+
+<pre><code>	php -v
+</code></pre>
+
+        </section>
+    
+
+    
+        <section id="installation" class="h1">
+            
+                    <h1>Installation</h1>
+                
+
+            <p>No content here</p>
+
+        </section>
+    
+
+    
+        <section id="usage-and-options" class="h1">
+            
+                    <h1>Usage And Options</h1>
+                
+
+            <p>At the moment there are only two existing commands.</p>
+
+<ul>
+  <li>backup:run</li>
+  <li>restore:run</li>
+</ul>
+
+        </section>
+    
+
+    
+        <section id="usage-backup-run" class="h2">
+            
+                    <h2>Backup Run</h2>
+                
+
+            <p>For creating backup you can use the <strong>“backup:run”</strong> argument. It requires at least <em>”–host your-host-here”</em> option<br />
+for starting an interactive console.<br />
+After a successful run of backup your data a configuration file will be written in yaml format.</p>
+
+<p><strong>Options:</strong></p>
+
+<ul>
+  <li><strong>config</strong>: A path to a file in yaml format</li>
+  <li><strong>host</strong>: Elasticsearch host or ip address. This will overwrite the host in config file, config and host is used at same time</li>
+  <li><strong>port</strong>: Port where the elasticsearch api is listening. Default is 9200</li>
+  <li><strong>type</strong>: Choose between “full” and “custom” backup. Custom backup will start an interactive process. The default is custom.</li>
+  <li><strong>target</strong>: Defines a target directory where you data will be stored. (example: /tmp/my-backups) This is required for type=full</li>
+</ul>
+
+<p><strong>Sample for a full backup</strong></p>
+
+<pre><code>	./php-backup-restore.phar backup:run --host localhost --type full --target /tmp/-my-backups
+</code></pre>
+
+<p><strong>Sample for a interactive backup</strong></p>
+
+<pre><code>	./php-backup-restore.phar backup:run --host localhost --target /tmp/-my-backups
+</code></pre>
+
+<p><strong>Sample for config based backup</strong></p>
+
+<pre><code>	./php-backup-restore.phar backup:run --config /tmp/-my-backups/20151001163526/config/backup-cfg.yml
+</code></pre>
+
+        </section>
+    
+
+    
+        <section id="usage-restore-run" class="h2">
+            
+                    <h2>Restore Run</h2>
+                
+
+            <p>For restoring you can use the <strong>“restore:run”</strong> argument. It requires at least <em>”–host your-host-here”</em> option<br />
+for starting an interactive console.<br />
+The restore task will ask you, if your not using a config file, to store your current restore configuraiton into cofnig folder of given source folder.</p>
+
+<p><strong>Options:</strong></p>
+
+<ul>
+  <li><strong>config</strong>: A path to a file in yaml format</li>
+  <li><strong>host</strong>: Elasticsearch host or ip address. This will overwrite the host in config file, config and host is used at same time</li>
+  <li><strong>port</strong>: Port where the elasticsearch api is listening. Default is 9200</li>
+  <li><strong>source</strong>: Defines a source directory where your backup is located. (example: /tmp/my-backups/20151001163526)</li>
+</ul>
+
+<p><strong>Sample for a interactive restore</strong></p>
+
+<pre><code>	./php-backup-restore.phar restore:run --host localhost
+</code></pre>
+
+<p><strong>Sample for config based restore</strong></p>
+
+<pre><code>	./php-backup-restore.phar restore:run --config /tmp/-my-backups/20151001163526/config/restore-cfg.yml
+</code></pre>
+
+        </section>
+    
+
+
+            </div>
+        </div>
+
+        <script src="js/jquery-2.1.1.min.js"></script>
+        <script scr="js/jquery.scrollTo.js"></script>
+        <script src="js/jquery.nav.js"></script>
+        <script src="js/scripts.js"></script>
+        <!-- Google Analytics Tracking Code - replace with you own analytics code -->
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+                (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+                m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-50358022-3', 'auto');
+            ga('send', 'pageview');
+        </script>
+    </body>
+</html>
