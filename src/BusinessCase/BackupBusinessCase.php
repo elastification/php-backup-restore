@@ -19,10 +19,14 @@ use Elastification\BackupRestore\Repository\ElasticsearchRepository;
 use Elastification\BackupRestore\Repository\ElasticsearchRepositoryInterface;
 use Elastification\BackupRestore\Repository\FilesystemRepository;
 use Elastification\BackupRestore\Repository\FilesystemRepositoryInterface;
-use Elastification\Client\Exception\ClientException;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\OutputInterface;
 
+/**
+ * Class BackupBusinessCase
+ * @package Elastification\BackupRestore\BusinessCase
+ * @author Daniel Wendlandt
+ */
 class BackupBusinessCase implements BackupBusinessCaseInterface
 {
     /**
@@ -36,6 +40,10 @@ class BackupBusinessCase implements BackupBusinessCaseInterface
     private $filesystem;
 
 
+    /**
+     * @param ElasticsearchRepositoryInterface|null $elastic
+     * @param FilesystemRepositoryInterface|null $filesystem
+     */
     public function __construct(
         ElasticsearchRepositoryInterface $elastic = null,
         FilesystemRepositoryInterface $filesystem = null

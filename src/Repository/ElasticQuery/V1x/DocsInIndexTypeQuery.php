@@ -54,5 +54,6 @@ class DocsInIndexTypeQuery implements QueryInterface
                 "size": 0
             }
         ';
+
     }
 }
