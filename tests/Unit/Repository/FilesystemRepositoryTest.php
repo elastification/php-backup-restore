@@ -12,6 +12,7 @@ use Elastification\BackupRestore\Entity\Mappings;
 use Elastification\BackupRestore\Entity\ServerInfo;
 use Elastification\BackupRestore\Repository\FilesystemRepository;
 use Elastification\BackupRestore\Repository\FilesystemRepositoryInterface;
+use Symfony\Component\Finder\Finder;
 
 class FilesystemRepositoryTest extends \PHPUnit_Framework_TestCase
 {
@@ -595,5 +596,84 @@ class FilesystemRepositoryTest extends \PHPUnit_Framework_TestCase
 
         $result = $this->filesystemRepository->loadYamlConfig($filepath);
         $this->assertSame($parsed, $result);
+    }
+    public function testLoadMappingsException()
+    {
+        $path = '/tmp/test-path';
+        $schemaFolderPath = $path . DIRECTORY_SEPARATOR . FilesystemRepositoryInterface::DIR_SCHEMA;
+
+        $this->filesystem->expects($this->once())->method('exists')->with($schemaFolderPath)->willReturn(false);
+
+        try {
+            $this->filesystemRepository->loadMappings($path);
+        } catch(\Exception $exception) {
+            $this->assertEquals('Schema folder does not exist in ' . $path, $exception->getMessage());
+            return;
+        }
+
+        $this->fail();
+    }
+
+    public function testLoadMappings()
+    {
+        $path = FIXTURE_ROOT . DIRECTORY_SEPARATOR . 'Unit';
+        $schemaFolderPath = $path . DIRECTORY_SEPARATOR . FilesystemRepositoryInterface::DIR_SCHEMA;
+
+        $types = ['type1', 'type2'];
+        $type1Content = file_get_contents($schemaFolderPath . DIRECTORY_SEPARATOR . 'index1' . DIRECTORY_SEPARATOR . 'type1.json');
+        $type2Content = file_get_contents($schemaFolderPath . DIRECTORY_SEPARATOR . 'index1' . DIRECTORY_SEPARATOR . 'type2.json');
+
+        $this->filesystem->expects($this->once())->method('exists')->with($schemaFolderPath)->willReturn(true);
+
+        $filesystemRepository = new FilesystemRepository(
+            $this->filesystem,
+            $this->yamlDumper,
+            $this->yamlParser,
+            new Finder()
+        );
+
+        $mappings = $filesystemRepository->loadMappings($path);
+
+        foreach($mappings->getIndices() as $index) {
+            $this->assertSame('index1', $index->getName());
+
+            foreach($index->getTypes() as $type) {
+                $this->assertTrue(in_array($type->getName(), $types));
+
+                if('type1' === $type->getName()) {
+                    $this->assertEquals($type1Content, json_encode($type->getSchema()));
+                } else {
+                    $this->assertEquals($type2Content, json_encode($type->getSchema()));
+                }
+            }
+        }
+    }
+
+    public function testLoadDataFiles()
+    {
+        $path = FIXTURE_ROOT . DIRECTORY_SEPARATOR . 'Unit';
+        $index = 'index1';
+        $type = 'type1';
+        $dataPath = $path .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::DIR_DATA .
+            DIRECTORY_SEPARATOR .
+            $index .
+            DIRECTORY_SEPARATOR .
+            $type;
+
+        $filesystemRepository = new FilesystemRepository(
+            $this->filesystem,
+            $this->yamlDumper,
+            $this->yamlParser,
+            new Finder()
+        );
+
+        $files = $filesystemRepository->loadDataFiles($path, $index, $type);
+
+        $this->assertCount(2, $files);
+        foreach($files as $file) {
+            $this->assertContains($dataPath, $file->getPath());
+        }
     }
 }
