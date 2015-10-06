@@ -65,7 +65,7 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
      * @throws \Exception
      * @author Daniel Wendlandt
      */
-    public function getDocCountByIndexType($host, $port = 9200, $numberOfIndices = 100)
+    public function getDocCountByIndexType($host, $port = 9200, $numberOfIndices = 10000)
     {
         $this->checkServerInfo($host, $port);
         $queryClassName = $this->getQueryClass('DocsInIndexTypeQuery');

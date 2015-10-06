@@ -121,9 +121,10 @@ interface FilesystemRepositoryInterface
      *
      * @param string $path
      * @param JobStats $jobStats
+     * @param \DateTime $createdAt
      * @author Daniel Wendlandt
      */
-    public function storeRestoreJobStats($path, JobStats $jobStats);
+    public function storeRestoreJobStats($path, JobStats $jobStats, \DateTime $createdAt = null);
 
     /**
      * Stores the backup config as yml

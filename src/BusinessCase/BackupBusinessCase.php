@@ -248,8 +248,8 @@ class BackupBusinessCase implements BackupBusinessCaseInterface
 
         $docCount = $this->elastic->getDocCountByIndexType(
             $job->getHost(),
-            $job->getPort(),
-            $job->getMappings()->countIndices());
+            $job->getPort());
+
 
         $storedStats = array();
 

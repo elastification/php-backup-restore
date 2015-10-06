@@ -9,6 +9,7 @@
 namespace Elastification\BackupRestore\Tests\Unit\Repository;
 
 use Elastification\BackupRestore\Entity\Mappings;
+use Elastification\BackupRestore\Entity\ServerInfo;
 use Elastification\BackupRestore\Repository\FilesystemRepository;
 use Elastification\BackupRestore\Repository\FilesystemRepositoryInterface;
 
@@ -232,5 +233,367 @@ class FilesystemRepositoryTest extends \PHPUnit_Framework_TestCase
         $docsCreated = $this->filesystemRepository->storeData($path, $index, $type, $docs);
 
         $this->assertSame(2, $docsCreated);
+    }
+
+    public function testStoreServerInfo()
+    {
+        $path = '/tmp/test-path';
+
+        $filepath = $path .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::DIR_META .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::FILENAME_SERVER_INFO .
+            FilesystemRepositoryInterface::FILE_EXTENSION;
+
+        $serverInfo = new ServerInfo();
+        $serverInfo->clusterName = 'my-cluster';
+        $serverInfo->name = 'my-name';
+        $serverInfo->version = '1.6.0';
+
+        $this->filesystem->expects($this->once())->method('dumpFile')->with($filepath, json_encode($serverInfo));
+
+        $this->filesystemRepository->storeServerInfo($path, $serverInfo);
+    }
+
+    public function testStoreRestoreServerInfoExistingFolder()
+    {
+        $path = '/tmp/test-path';
+        $datetimeString = '20151006100005_';
+
+        /** @var \PHPUnit_Framework_MockObject_MockObject $dateTime */
+        $dateTime = $this->getMockBuilder('DateTime')->disableOriginalConstructor()->getMock();
+        $dateTime->expects($this->once())->method('format')->with('YmdHis_')->willReturn($datetimeString);
+
+        $folderpath = $path .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::DIR_META .
+            DIRECTORY_SEPARATOR .
+            $datetimeString .
+            FilesystemRepositoryInterface::DIR_SUB_RESTORE;
+
+        $filepath = $folderpath .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::FILENAME_SERVER_INFO .
+            FilesystemRepositoryInterface::FILE_EXTENSION;
+
+        $serverInfo = new ServerInfo();
+        $serverInfo->clusterName = 'my-cluster';
+        $serverInfo->name = 'my-name';
+        $serverInfo->version = '1.6.0';
+
+        $this->filesystem->expects($this->once())->method('exists')->with($folderpath)->willReturn(true);
+        $this->filesystem->expects($this->never())->method('mkdir');
+        $this->filesystem->expects($this->once())->method('dumpFile')->with($filepath, json_encode($serverInfo));
+
+        $this->filesystemRepository->storeRestoreServerInfo($path, $dateTime, $serverInfo);
+    }
+
+    public function testStoreRestoreServerInfoNotExistingFolder()
+    {
+        $path = '/tmp/test-path';
+        $datetimeString = '20151006100005_';
+
+        /** @var \PHPUnit_Framework_MockObject_MockObject $dateTime */
+        $dateTime = $this->getMockBuilder('DateTime')->disableOriginalConstructor()->getMock();
+        $dateTime->expects($this->once())->method('format')->with('YmdHis_')->willReturn($datetimeString);
+
+        $folderpath = $path .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::DIR_META .
+            DIRECTORY_SEPARATOR .
+            $datetimeString .
+            FilesystemRepositoryInterface::DIR_SUB_RESTORE;
+
+        $filepath = $folderpath .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::FILENAME_SERVER_INFO .
+            FilesystemRepositoryInterface::FILE_EXTENSION;
+
+        $serverInfo = new ServerInfo();
+        $serverInfo->clusterName = 'my-cluster';
+        $serverInfo->name = 'my-name';
+        $serverInfo->version = '1.6.0';
+
+        $this->filesystem->expects($this->once())->method('exists')->with($folderpath)->willReturn(false);
+        $this->filesystem->expects($this->once())->method('mkdir')->with($folderpath);
+        $this->filesystem->expects($this->once())->method('dumpFile')->with($filepath, json_encode($serverInfo));
+
+        $this->filesystemRepository->storeRestoreServerInfo($path, $dateTime, $serverInfo);
+    }
+
+    public function testStoreRestoreStoredStatsExistingFolder()
+    {
+        $path = '/tmp/test-path';
+        $datetimeString = '20151006100005_';
+
+        /** @var \PHPUnit_Framework_MockObject_MockObject $dateTime */
+        $dateTime = $this->getMockBuilder('DateTime')->disableOriginalConstructor()->getMock();
+        $dateTime->expects($this->once())->method('format')->with('YmdHis_')->willReturn($datetimeString);
+
+        $folderpath = $path .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::DIR_META .
+            DIRECTORY_SEPARATOR .
+            $datetimeString .
+            FilesystemRepositoryInterface::DIR_SUB_RESTORE;
+
+        $filepath = $folderpath .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::FILENAME_STORED_STATS .
+            FilesystemRepositoryInterface::FILE_EXTENSION;
+
+        $storedStats = [['properties' => []]];
+
+        $this->filesystem->expects($this->once())->method('exists')->with($folderpath)->willReturn(true);
+        $this->filesystem->expects($this->never())->method('mkdir');
+        $this->filesystem->expects($this->once())->method('dumpFile')->with($filepath, json_encode($storedStats));
+
+        $this->filesystemRepository->storeRestoreStoredStats($path, $dateTime, $storedStats);
+    }
+
+    public function testStoreRestoreStoredStatsNotExistingFolder()
+    {
+        $path = '/tmp/test-path';
+        $datetimeString = '20151006100005_';
+
+        /** @var \PHPUnit_Framework_MockObject_MockObject $dateTime */
+        $dateTime = $this->getMockBuilder('DateTime')->disableOriginalConstructor()->getMock();
+        $dateTime->expects($this->once())->method('format')->with('YmdHis_')->willReturn($datetimeString);
+
+        $folderpath = $path .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::DIR_META .
+            DIRECTORY_SEPARATOR .
+            $datetimeString .
+            FilesystemRepositoryInterface::DIR_SUB_RESTORE;
+
+        $filepath = $folderpath .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::FILENAME_STORED_STATS .
+            FilesystemRepositoryInterface::FILE_EXTENSION;
+
+        $storedStats = [['properties' => []]];
+
+        $this->filesystem->expects($this->once())->method('exists')->with($folderpath)->willReturn(false);
+        $this->filesystem->expects($this->once())->method('mkdir')->with($folderpath);
+        $this->filesystem->expects($this->once())->method('dumpFile')->with($filepath, json_encode($storedStats));
+
+        $this->filesystemRepository->storeRestoreStoredStats($path, $dateTime, $storedStats);
+    }
+
+    public function testStoreStoredStats()
+    {
+        $path = '/tmp/test-path';
+
+        $filepath = $path .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::DIR_META .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::FILENAME_STORED_STATS .
+            FilesystemRepositoryInterface::FILE_EXTENSION;
+
+        $storedStats = [['properties' => []]];
+
+        $this->filesystem->expects($this->never())->method('exists');
+        $this->filesystem->expects($this->never())->method('mkdir');
+        $this->filesystem->expects($this->once())->method('dumpFile')->with($filepath, json_encode($storedStats));
+
+        $this->filesystemRepository->storeStoredStats($path, $storedStats);
+    }
+
+    public function testStoreBackupJobStats()
+    {
+        $path = '/tmp/test-path';
+
+        $filepath = $path .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::DIR_META .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::FILENAME_JOB_STATS .
+            FilesystemRepositoryInterface::FILE_EXTENSION;
+
+        $jobStatsArray = [['stats' => []]];
+
+        /** @var \PHPUnit_Framework_MockObject_MockObject $jobStats */
+        $jobStats = $this->getMockBuilder('Elastification\BackupRestore\Entity\JobStats')
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $jobStats->expects($this->once())->method('toArray')->willReturn($jobStatsArray);
+        $this->filesystem->expects($this->once())->method('dumpFile')->with($filepath, json_encode($jobStatsArray));
+
+        $this->filesystemRepository->storeBackupJobStats($path, $jobStats);
+    }
+
+    public function testStoreRestoreJobStatsExistingFolder()
+    {
+        $path = '/tmp/test-path';
+        $datetimeString = '20151006100005_';
+
+        /** @var \PHPUnit_Framework_MockObject_MockObject $dateTime */
+        $dateTime = $this->getMockBuilder('DateTime')->disableOriginalConstructor()->getMock();
+        $dateTime->expects($this->once())->method('format')->with('YmdHis_')->willReturn($datetimeString);
+
+        $jobStatsArray = [['stats' => []]];
+
+        /** @var \PHPUnit_Framework_MockObject_MockObject $jobStats */
+        $jobStats = $this->getMockBuilder('Elastification\BackupRestore\Entity\JobStats')
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $jobStats->expects($this->once())->method('toArray')->willReturn($jobStatsArray);
+
+        $folderpath = $path .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::DIR_META .
+            DIRECTORY_SEPARATOR .
+            $datetimeString .
+            FilesystemRepositoryInterface::DIR_SUB_RESTORE;
+
+        $filepath = $folderpath .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::FILENAME_JOB_STATS .
+            FilesystemRepositoryInterface::FILE_EXTENSION;
+
+        $this->filesystem->expects($this->once())->method('exists')->with($folderpath)->willReturn(true);
+        $this->filesystem->expects($this->never())->method('mkdir');
+        $this->filesystem->expects($this->once())->method('dumpFile')->with($filepath, json_encode($jobStatsArray));
+
+        $this->filesystemRepository->storeRestoreJobStats($path, $jobStats, $dateTime);
+    }
+
+    public function testStoreRestoreJobStatsNotExistingFolder()
+    {
+        $path = '/tmp/test-path';
+        $datetimeString = '20151006100005_';
+
+        /** @var \PHPUnit_Framework_MockObject_MockObject $dateTime */
+        $dateTime = $this->getMockBuilder('DateTime')->disableOriginalConstructor()->getMock();
+        $dateTime->expects($this->once())->method('format')->with('YmdHis_')->willReturn($datetimeString);
+
+        $jobStatsArray = [['stats' => []]];
+
+        /** @var \PHPUnit_Framework_MockObject_MockObject $jobStats */
+        $jobStats = $this->getMockBuilder('Elastification\BackupRestore\Entity\JobStats')
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $jobStats->expects($this->once())->method('toArray')->willReturn($jobStatsArray);
+
+        $folderpath = $path .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::DIR_META .
+            DIRECTORY_SEPARATOR .
+            $datetimeString .
+            FilesystemRepositoryInterface::DIR_SUB_RESTORE;
+
+        $filepath = $folderpath .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::FILENAME_JOB_STATS .
+            FilesystemRepositoryInterface::FILE_EXTENSION;
+
+        $this->filesystem->expects($this->once())->method('exists')->with($folderpath)->willReturn(false);
+        $this->filesystem->expects($this->once())->method('mkdir')->with($folderpath);
+        $this->filesystem->expects($this->once())->method('dumpFile')->with($filepath, json_encode($jobStatsArray));
+
+        $this->filesystemRepository->storeRestoreJobStats($path, $jobStats, $dateTime);
+    }
+
+    public function testStoreBackupConfig()
+    {
+        $path = '/tmp/test-path';
+        $data = ['yaml' => 'data'];
+        $yamlString = 'YamlString';
+
+        $filepath = $path .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::DIR_CONFIG .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::FILENAME_CONFIG_BACKUP .
+            FilesystemRepositoryInterface::FILE_EXTENSION_CONFIG;
+
+        $this->yamlDumper->expects($this->once())->method('dump')->with($data, 5)->willReturn($yamlString);
+        $this->filesystem->expects($this->once())->method('dumpFile')->with($filepath, $yamlString);
+
+        $this->filesystemRepository->storeBackupConfig($path, $data);
+    }
+
+    public function testStoreRestoreConfig()
+    {
+        $path = '/tmp/test-path';
+        $data = ['yaml' => 'data'];
+        $yamlString = 'YamlString';
+        $configName = 'my-config-name';
+
+        $restoreJob = $this->getMockBuilder('Elastification\BackupRestore\Entity\RestoreJob')
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $filepath = $path .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::DIR_CONFIG .
+            DIRECTORY_SEPARATOR .
+            $configName .
+            FilesystemRepositoryInterface::FILE_EXTENSION_CONFIG;
+
+        $restoreJob->expects($this->once())->method('getPath')->willReturn($path);
+        $restoreJob->expects($this->once())->method('getConfigName')->willReturn($configName);
+        $this->yamlDumper->expects($this->once())->method('dump')->with($data, 5)->willReturn($yamlString);
+        $this->filesystem->expects($this->once())->method('dumpFile')->with($filepath, $yamlString);
+
+        $this->filesystemRepository->storeRestoreConfig($restoreJob, $data);
+    }
+
+    public function testSymlinkLatestBackupNotExisting()
+    {
+        $path = '/tmp/test-path';
+        $latestPath = dirname($path) . DIRECTORY_SEPARATOR . FilesystemRepositoryInterface::SYMLINK_LATEST;
+
+        $this->filesystem->expects($this->once())->method('exists')->with($latestPath)->willReturn(false);
+        $this->filesystem->expects($this->never())->method('remove');
+        $this->filesystem->expects($this->once())->method('symlink')->with($path, $latestPath);
+
+        $this->filesystemRepository->symlinkLatestBackup($path);
+    }
+
+    public function testSymlinkLatestBackupExisting()
+    {
+        $path = '/tmp/test-path';
+        $latestPath = dirname($path) . DIRECTORY_SEPARATOR . FilesystemRepositoryInterface::SYMLINK_LATEST;
+
+        $this->filesystem->expects($this->once())->method('exists')->with($latestPath)->willReturn(true);
+        $this->filesystem->expects($this->once())->method('remove')->with($latestPath);
+        $this->filesystem->expects($this->once())->method('symlink')->with($path, $latestPath);
+
+        $this->filesystemRepository->symlinkLatestBackup($path);
+    }
+
+    public function testLoadYamlConfigException()
+    {
+        $path = '/tmp/test-path';
+        $this->filesystem->expects($this->once())->method('exists')->with($path)->willReturn(false);
+
+        try {
+            $this->filesystemRepository->loadYamlConfig($path);
+        } catch(\Exception $exception) {
+            $this->assertEquals('Config file ' . $path . ' does not exist.', $exception->getMessage());
+            return;
+        }
+
+        $this->fail();
+    }
+
+    public function testLoadYamlConfig()
+    {
+        $filepath = FIXTURE_ROOT . DIRECTORY_SEPARATOR . 'Unit' . DIRECTORY_SEPARATOR . 'dummy.yml';
+        $parsed = ['parsed' => 'stuff'];
+        $yamlContent = file_get_contents($filepath);
+
+        $this->filesystem->expects($this->once())->method('exists')->with($filepath)->willReturn(true);
+        $this->yamlParser->expects($this->once())->method('parse')->with($yamlContent)->willReturn($parsed);
+
+        $result = $this->filesystemRepository->loadYamlConfig($filepath);
+        $this->assertSame($parsed, $result);
     }
 }

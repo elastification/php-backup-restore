@@ -75,7 +75,7 @@ class FilesystemRepository implements FilesystemRepositoryInterface
         if(null === $finder) {
             $this->finder = new Finder();
         } else {
-            $this->yamlParser = $finder;
+            $this->finder = $finder;
         }
     }
 
@@ -206,7 +206,7 @@ class FilesystemRepository implements FilesystemRepositoryInterface
             self::FILENAME_SERVER_INFO .
             self::FILE_EXTENSION;
 
-        if($this->filesytsem->exists($folderpath)) {
+        if(!$this->filesytsem->exists($folderpath)) {
             $this->filesytsem->mkdir($folderpath);
         }
 
@@ -235,7 +235,7 @@ class FilesystemRepository implements FilesystemRepositoryInterface
             self::FILENAME_STORED_STATS .
             self::FILE_EXTENSION;
 
-        if($this->filesytsem->exists($folderpath)) {
+        if(!$this->filesytsem->exists($folderpath)) {
             $this->filesytsem->mkdir($folderpath);
         }
 
@@ -287,17 +287,21 @@ class FilesystemRepository implements FilesystemRepositoryInterface
      * @param JobStats $jobStats
      * @author Daniel Wendlandt
      */
-    public function storeRestoreJobStats($path, JobStats $jobStats)
+    public function storeRestoreJobStats($path, JobStats $jobStats, \DateTime $createdAt = null)
     {
+        if(null === $createdAt) {
+            $createdAt = new \DateTime();
+        }
+
         $folderpath = $path .
             DIRECTORY_SEPARATOR .
             self::DIR_META .
             DIRECTORY_SEPARATOR .
+            $createdAt->format('YmdHis_') .
             self::DIR_SUB_RESTORE;
 
         $filepath = $folderpath .
             DIRECTORY_SEPARATOR .
-            date('YmdHis') . '_' .
             self::FILENAME_JOB_STATS .
             self::FILE_EXTENSION;
 

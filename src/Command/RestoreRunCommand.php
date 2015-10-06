@@ -50,8 +50,7 @@ class RestoreRunCommand extends Command
                 'port',
                 null,
                 InputOption::VALUE_OPTIONAL,
-                'Default port is 9200 if not set',
-                9200
+                'Default port is 9200 if not set'
             )
             ->addOption(
                 'source',
@@ -102,6 +101,9 @@ class RestoreRunCommand extends Command
             return;
         }
 
+        if(null === $port) {
+            $port = 9200;
+        }
 
         //custom process
         if(null === $source) {

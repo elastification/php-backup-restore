@@ -34,7 +34,7 @@ interface ElasticsearchRepositoryInterface
      * @throws \Exception
      * @author Daniel Wendlandt
      */
-    public function getDocCountByIndexType($host, $port = 9200, $numberOfIndices = 100);
+    public function getDocCountByIndexType($host, $port = 9200, $numberOfIndices = 10000);
 
     /**
      * Get mappings for all indices

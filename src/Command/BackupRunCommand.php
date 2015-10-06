@@ -52,8 +52,7 @@ class BackupRunCommand extends Command
                 'port',
                 null,
                 InputOption::VALUE_OPTIONAL,
-                'Default port is 9200 if not set',
-                9200
+                'Default port is 9200 if not set'
             )
             ->addOption(
                 'type',
@@ -108,6 +107,9 @@ class BackupRunCommand extends Command
             return;
         }
 
+        if(null === $port) {
+            $port = 9200;
+        }
 
         //custom process
         if(self::OPTION_TYPE_FULL != $type && null === $target) {
