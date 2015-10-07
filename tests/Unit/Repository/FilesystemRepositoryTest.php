@@ -71,7 +71,7 @@ class FilesystemRepositoryTest extends \PHPUnit_Framework_TestCase
         parent::tearDown();
     }
 
-    public function testInterface()
+    public function testInstance()
     {
         $this->assertInstanceOf(
             'Elastification\BackupRestore\Repository\FilesystemRepositoryInterface',

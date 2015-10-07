@@ -45,7 +45,7 @@ class DocsInIndexTypeQuery implements QueryInterface
                         "terms" : { "field" : "_index", "size": ' . (int) $values['size'] . ' },
                         "aggs": {
                             "count_docs_in_types": {
-                                "terms" : { "field" : "_type", "size": 100 }
+                                "terms" : { "field" : "_type", "size": ' . (int) $values['size'] . ' }
                             }
                         }
                     }

@@ -13,7 +13,6 @@ use Elastification\BackupRestore\Entity\ServerInfo;
 use Elastification\BackupRestore\Helper\VersionHelper;
 use Elastification\BackupRestore\Repository\ElasticQuery\QueryInterface;
 use Elastification\Client\Exception\ClientException;
-use Elastification\Client\Request\V1x\CreateDocumentRequest;
 use Elastification\Client\Request\V1x\Index\CreateMappingRequest;
 use Elastification\Client\Request\V1x\NodeInfoRequest;
 use Elastification\Client\Request\V1x\SearchRequest;

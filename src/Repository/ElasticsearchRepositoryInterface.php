@@ -10,9 +10,29 @@ namespace Elastification\BackupRestore\Repository;
 use Elastification\BackupRestore\Entity\IndexTypeStats;
 use Elastification\BackupRestore\Entity\Mappings;
 use Elastification\BackupRestore\Entity\ServerInfo;
+use Elastification\Client\ClientInterface;
+use Elastification\Client\Serializer\SerializerInterface;
 
 interface ElasticsearchRepositoryInterface
 {
+
+    /**
+     * Sets a client.
+     *
+     * @param ClientInterface $client
+     * @param string $host
+     * @param int $port
+     * @author Daniel Wendlandt
+     */
+    public function setClient(ClientInterface $client, $host, $port = 9200);
+
+    /**
+     * Sets the serializer the will be used for requests
+     *
+     * @param SerializerInterface $serializer
+     * @author Daniel Wendlandt
+     */
+    public function setSerializer(SerializerInterface $serializer);
 
     /**
      * Gets the server info for the current host

@@ -31,6 +31,31 @@ abstract class AbstractElasticsearchRepository
     private $serializer = null;
 
     /**
+     * Sets a client.
+     *
+     * @param ClientInterface $client
+     * @param string $host
+     * @param int $port
+     * @author Daniel Wendlandt
+     */
+    public function setClient(ClientInterface $client, $host, $port = 9200)
+    {
+        $clientName = $this->createClientName($host, $port);
+        $this->clients[$clientName] = $client;
+    }
+
+    /**
+     * Sets the serializer the will be used for requests
+     *
+     * @param SerializerInterface $serializer
+     * @author Daniel Wendlandt
+     */
+    public function setSerializer(SerializerInterface $serializer)
+    {
+        $this->serializer = $serializer;
+    }
+
+    /**
      * Gets a client with checking an instance cache.
      * If not exists, then a new client will be created
      *
