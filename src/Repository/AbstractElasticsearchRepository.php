@@ -8,6 +8,8 @@
 
 namespace Elastification\BackupRestore\Repository;
 
+use Elastification\BackupRestore\Repository\Elasticsearch\RequestFactory;
+use Elastification\BackupRestore\Repository\Elasticsearch\RequestFactoryInterface;
 use Elastification\Client\Client;
 use Elastification\Client\ClientInterface;
 use Elastification\Client\Request\RequestManager;
@@ -29,6 +31,23 @@ abstract class AbstractElasticsearchRepository
      * @var SerializerInterface
      */
     private $serializer = null;
+
+    /**
+     * @var RequestFactoryInterface
+     */
+    protected $requestFactory;
+
+    /**
+     * @param RequestFactoryInterface|null $requestFactory
+     */
+    public function __construct(RequestFactoryInterface $requestFactory = null)
+    {
+        if(null === $requestFactory) {
+            $requestFactory = new RequestFactory();
+        }
+
+        $this->requestFactory = $requestFactory;
+    }
 
     /**
      * Sets a client.

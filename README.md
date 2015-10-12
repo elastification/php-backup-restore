@@ -130,6 +130,7 @@ The restore task will ask you, if your not using a config file, to store your cu
 - command: explore backups with showing meta data
 - command: backup:config should create a config file only and stores somewhere
 - WRITING TESTS !!!
+- restore: retsore only partial types from backups not all.
 
 
 

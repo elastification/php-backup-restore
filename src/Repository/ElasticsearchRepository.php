@@ -21,6 +21,11 @@ use Elastification\Client\Request\V1x\UpdateDocumentRequest;
 use Elastification\Client\Response\V1x\NodeInfoResponse;
 use Elastification\Client\Response\V1x\SearchResponse;
 
+/**
+ * Class ElasticsearchRepository
+ * @package Elastification\BackupRestore\Repository
+ * @author Daniel Wendlandt
+ */
 class ElasticsearchRepository extends AbstractElasticsearchRepository implements ElasticsearchRepositoryInterface
 {
 
@@ -72,11 +77,14 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
         /** @var QueryInterface $query */
         $query = new $queryClassName();
 
-        $requestClassName = $this->getRequestClass('SearchRequest');
-
         /** @var SearchRequest $request */
-        $request = new $requestClassName(null, null, $this->getSerializer());
-        $request->setBody($query->getBody(array('size' => $numberOfIndices + 10)));
+        $request = $this->requestFactory->create(
+            'SearchRequest',
+            $this->serverInfo->version,
+            null,
+            null,
+            $this->getSerializer());
+        $request->setBody($query->getBody(array('size' => $numberOfIndices)));
 
         $client = $this->getClient($host, $port);
         $response = $client->send($request);
@@ -114,8 +122,12 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
     {
         $this->checkServerInfo($host, $port);
 
-        $requestClassName = $this->getRequestClass('Index\\GetMappingRequest');
-        $request = new $requestClassName(null, null, $this->getSerializer());
+        $request = $this->requestFactory->create(
+            'Index\\GetMappingRequest',
+            $this->serverInfo->version,
+            null,
+            null,
+            $this->getSerializer());
 
         $client = $this->getClient($host, $port);
 
@@ -166,9 +178,13 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
             )
         );
 
-        $requestClassName = $this->getRequestClass('SearchRequest');
         /** @var SearchRequest $request */
-        $request = new $requestClassName($index, $type, $this->getSerializer());
+        $request = $this->requestFactory->create(
+            'SearchRequest',
+            $this->serverInfo->version,
+            $index,
+            $type,
+            $this->getSerializer());
         $request->setParameter('scroll', $scrollTimeUnit);
         $request->setParameter('size', $sizePerChart);
         $request->setParameter('search_type', 'scan');
@@ -198,9 +214,16 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
      */
     public function getScrollSearchData($scrollId, $host, $port = 9200, $scrollTimeUnit = '10m')
     {
-        $requestClassName = $this->getRequestClass('SearchScrollRequest');
+        $this->checkServerInfo($host, $port);
+
         /** @var SearchScrollRequest $request */
-        $request = new $requestClassName(null, null, $this->getSerializer());
+        $request = $this->requestFactory->create(
+            'SearchScrollRequest',
+            $this->serverInfo->version,
+            null,
+            null,
+            $this->getSerializer()
+        );
         $request->setScroll($scrollTimeUnit);
         $request->setScrollId($scrollId);
 
@@ -208,7 +231,6 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
         /** @var SearchResponse $response */
         $response = $client->send($request);
 
-//        yield $response->getData()['_scroll_id'] => $response->getHitsHits();
         return array('scrollId' => $response->getData()['_scroll_id'], 'hits' => $response->getHitsHits());
     }
 
