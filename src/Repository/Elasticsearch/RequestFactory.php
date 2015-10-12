@@ -20,7 +20,7 @@ class RequestFactory implements RequestFactoryInterface
     {
         $requestClassName = $this->getRequestClass($className, $elasticsearchVersion);
 
-        return new $requestClassName(null, null, $serializer);
+        return new $requestClassName($index, $type, $serializer);
     }
 
     /**
