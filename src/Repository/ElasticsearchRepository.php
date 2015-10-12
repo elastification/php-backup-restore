@@ -246,12 +246,18 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
      */
     public function createMapping($index, $type, array $schema, $host, $port = 9200)
     {
+        $this->checkServerInfo($host, $port);
         $client = $this->getClient($host, $port);
 
         //delete existing one
-        $deleteRequestClassName = $this->getRequestClass('Index\\DeleteIndexRequest');
         /** @var CreateMappingRequest $request */
-        $deleteRequest = new $deleteRequestClassName($index, $type, $this->getSerializer());
+        $deleteRequest = $this->requestFactory->create(
+            'Index\\DeleteIndexRequest',
+            $this->serverInfo->version,
+            $index,
+            $type,
+            $this->getSerializer()
+        );
 
         try {
             $client->send($deleteRequest);
@@ -260,9 +266,13 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
         }
 
         //check for index and create one
-        $createRequestClassName = $this->getRequestClass('Index\\CreateIndexRequest');
-        /** @var CreateMappingRequest $request */
-        $createRequest = new $createRequestClassName($index, null, $this->getSerializer());
+        $createRequest = $this->requestFactory->create(
+            'Index\\CreateIndexRequest',
+            $this->serverInfo->version,
+            $index,
+            null,
+            $this->getSerializer()
+        );
 
         try {
             $client->send($createRequest);
@@ -271,9 +281,15 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
         }
 
         //add new mapping
-        $requestClassName = $this->getRequestClass('Index\\CreateMappingRequest');
         /** @var CreateMappingRequest $request */
-        $request = new $requestClassName($index, $type, $this->getSerializer());
+        $request = $this->requestFactory->create(
+            'Index\\CreateMappingRequest',
+            $this->serverInfo->version,
+            $index,
+            $type,
+            $this->getSerializer()
+        );
+
         $request->setBody($schema);
 
         $client->send($request);

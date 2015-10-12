@@ -423,6 +423,51 @@ class ElasticsearchRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($hits, $result['hits']);
     }
 
+    public function testCreateMapping()
+    {
+        $version = '1.6.0';
+        $serverInfoData = $this->getServerInfoData($version);
+        $index = 'my-index';
+        $type = 'my-type';
+        $schema = ['my' => 'schema'];
+
+        $deleteIndexRequest = $this->getMockBuilder('Elastification\Client\Request\V1x\Index\DeleteIndexRequest')
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $createIndexRequest = $this->getMockBuilder('Elastification\Client\Request\V1x\Index\CreateIndexRequest')
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->serverInfoResponse->expects($this->exactly(3))->method('getData')->willReturn($serverInfoData);
+        $this->request->expects($this->once())->method('setBody')->with($this->equalTo($schema));
+        $this->requestFactory->expects($this->exactly(3))
+            ->method('create')
+            ->withConsecutive(
+                array('Index\\DeleteIndexRequest', $version, $index, $type, $this->serializer),
+                array('Index\\CreateIndexRequest', $version, $index, null, $this->serializer),
+                array('Index\\CreateMappingRequest', $version, $index, $type, $this->serializer)
+            )
+            ->willReturnOnConsecutiveCalls(
+                $deleteIndexRequest,
+                $createIndexRequest,
+                $this->request
+            );
+
+        $this->client->expects($this->exactly(4))
+            ->method('send')
+            ->withConsecutive(
+                $this->isInstanceOf('Elastification\Client\Request\V1x\NodeInfoRequest'),
+                $this->isInstanceOf('Elastification\Client\Request\V1x\Index\DeleteIndexRequest'),
+                $this->isInstanceOf('Elastification\Client\Request\V1x\Index\CreateIndexRequest'),
+                $this->isInstanceOf('Elastification\Client\Request\V1x\Index\CreateMappingRequest'))
+            ->willReturnOnConsecutiveCalls(
+                $this->serverInfoResponse
+            );
+
+        $this->repository->createMapping($index, $type, $schema, self::HOST, self::PORT);
+    }
+
     /**
      * @param string $version
      * @return array
