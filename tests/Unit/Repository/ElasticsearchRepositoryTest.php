@@ -468,6 +468,98 @@ class ElasticsearchRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->repository->createMapping($index, $type, $schema, self::HOST, self::PORT);
     }
 
+    public function testCreateDocument()
+    {
+        $version = '1.6.0';
+        $serverInfoData = $this->getServerInfoData($version);
+        $index = 'my-index';
+        $type = 'my-type';
+        $id = 'my-id';
+        $doc = ['my' => 'doc'];
+
+        $this->request = $this->getMockBuilder('Elastification\Client\Request\V1x\UpdateDocumentRequest')
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->serverInfoResponse->expects($this->exactly(3))->method('getData')->willReturn($serverInfoData);
+        $this->request->expects($this->once())->method('setId')->with($id);
+        $this->request->expects($this->once())->method('setBody')->with($doc);
+
+        $this->requestFactory->expects($this->once())
+            ->method('create')
+            ->with('UpdateDocumentRequest', $version, $index, $type, $this->serializer)
+            ->willReturn($this->request);
+
+        $this->client->expects($this->exactly(2))
+            ->method('send')
+            ->withConsecutive(
+                $this->isInstanceOf('Elastification\Client\Request\V1x\NodeInfoRequest'),
+                $this->isInstanceOf('Elastification\Client\Request\V1x\UpdateDocumentRequest'))
+            ->willReturnOnConsecutiveCalls(
+                $this->serverInfoResponse,
+                $this->response
+            );
+
+        $result = $this->repository->createDocument($index, $type, $id, $doc, self::HOST, self::PORT);
+        $this->assertSame($this->response, $result);
+    }
+
+    public function testRefreshIndex()
+    {
+        $version = '1.6.0';
+        $serverInfoData = $this->getServerInfoData($version);
+        $index = 'my-index';
+
+        $this->request = $this->getMockBuilder('Elastification\Client\Request\V1x\Index\RefreshIndexRequest')
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->serverInfoResponse->expects($this->exactly(3))->method('getData')->willReturn($serverInfoData);
+
+        $this->requestFactory->expects($this->once())
+            ->method('create')
+            ->with('Index\\RefreshIndexRequest', $version, $index, null, $this->serializer)
+            ->willReturn($this->request);
+
+        $this->client->expects($this->exactly(2))
+            ->method('send')
+            ->withConsecutive(
+                $this->isInstanceOf('Elastification\Client\Request\V1x\NodeInfoRequest'),
+                $this->isInstanceOf('Elastification\Client\Request\V1x\Index\RefreshIndexRequest'))
+            ->willReturnOnConsecutiveCalls(
+                $this->serverInfoResponse,
+                $this->response
+            );
+
+        $result = $this->repository->refreshIndex($index, self::HOST, self::PORT);
+        $this->assertSame($this->response, $result);
+    }
+
+    public function testRefreshIndexWithExceptionForVersion()
+    {
+        $version = '0.90.1';
+        $serverInfoData = $this->getServerInfoData($version);
+        $index = 'my-index';
+
+        $this->serverInfoResponse->expects($this->exactly(3))->method('getData')->willReturn($serverInfoData);
+        $this->requestFactory->expects($this->never())->method('create');
+        $this->client->expects($this->once())
+            ->method('send')
+            ->with($this->isInstanceOf('Elastification\Client\Request\V1x\NodeInfoRequest'))
+            ->willReturn($this->serverInfoResponse);
+
+        try {
+            $this->repository->refreshIndex($index, self::HOST, self::PORT);
+        } catch(\Exception $exception) {
+            $this->assertSame('Elasticsearch version ' . $version . ' is not supported by this tool',
+                $exception->getMessage());
+
+            return;
+        }
+
+        $this->fail();
+    }
+
     /**
      * @param string $version
      * @return array

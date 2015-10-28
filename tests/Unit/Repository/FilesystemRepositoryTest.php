@@ -501,6 +501,43 @@ class FilesystemRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->filesystemRepository->storeRestoreJobStats($path, $jobStats, $dateTime);
     }
 
+    public function testStoreRestoreJobStatsExistingFolderWithoutDateTime()
+    {
+        $path = '/tmp/test-path';
+        $datetimeString = '20151006100005_';
+
+//        /** @var \PHPUnit_Framework_MockObject_MockObject $dateTime */
+//        $dateTime = $this->getMockBuilder('DateTime')->disableOriginalConstructor()->getMock();
+//        $dateTime->expects($this->once())->method('format')->with('YmdHis_')->willReturn($datetimeString);
+//        $dateTime = new \DateTime();
+        $jobStatsArray = [['stats' => []]];
+
+        /** @var \PHPUnit_Framework_MockObject_MockObject $jobStats */
+        $jobStats = $this->getMockBuilder('Elastification\BackupRestore\Entity\JobStats')
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $jobStats->expects($this->once())->method('toArray')->willReturn($jobStatsArray);
+
+        $folderpath = $path .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::DIR_META .
+            DIRECTORY_SEPARATOR .
+            $datetimeString .
+            FilesystemRepositoryInterface::DIR_SUB_RESTORE;
+
+        $filepath = $folderpath .
+            DIRECTORY_SEPARATOR .
+            FilesystemRepositoryInterface::FILENAME_JOB_STATS .
+            FilesystemRepositoryInterface::FILE_EXTENSION;
+
+        $this->filesystem->expects($this->once())->method('exists')->willReturn(true);
+        $this->filesystem->expects($this->never())->method('mkdir');
+        $this->filesystem->expects($this->once())->method('dumpFile');
+
+        $this->filesystemRepository->storeRestoreJobStats($path, $jobStats);
+    }
+
     public function testStoreBackupConfig()
     {
         $path = '/tmp/test-path';

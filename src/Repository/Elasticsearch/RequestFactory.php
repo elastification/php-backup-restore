@@ -8,7 +8,6 @@
 
 namespace Elastification\BackupRestore\Repository\Elasticsearch;
 
-use Elastification\Client\Request\RequestInterface;
 use Elastification\Client\Serializer\SerializerInterface;
 
 class RequestFactory implements RequestFactoryInterface

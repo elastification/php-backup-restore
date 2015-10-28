@@ -127,10 +127,11 @@ The restore task will ask you, if your not using a config file, to store your cu
 - for backup config you could provide a query per index/type
 - creating zip files when zip extension is enabled and also ask for deleting directory after created zip
 - backup store aliases if set on backuped indices
+- backup: add index for selecting all types of an index
 - command: explore backups with showing meta data
 - command: backup:config should create a config file only and stores somewhere
 - WRITING TESTS !!!
-- restore: retsore only partial types from backups not all.
+- restore: restore only partial types from backups not all.
 
 
 

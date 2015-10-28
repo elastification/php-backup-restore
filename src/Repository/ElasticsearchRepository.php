@@ -310,11 +310,17 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
      */
     public function createDocument($index, $type, $id, array $doc, $host, $port = 9200)
     {
+        $this->checkServerInfo($host, $port);
         $client = $this->getClient($host, $port);
 
-        $updateDocRequestClassName = $this->getRequestClass('UpdateDocumentRequest');
         /** @var UpdateDocumentRequest $updateDocRequest */
-        $updateDocRequest = new $updateDocRequestClassName($index, $type, $this->getSerializer());
+        $updateDocRequest = $this->requestFactory->create(
+            'UpdateDocumentRequest',
+            $this->serverInfo->version,
+            $index,
+            $type,
+            $this->getSerializer()
+        );
 
         $updateDocRequest->setId($id);
         $updateDocRequest->setBody($doc);
@@ -333,10 +339,16 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
      */
     public function refreshIndex($index, $host, $port = 9200)
     {
+        $this->checkServerInfo($host, $port);
         $client = $this->getClient($host, $port);
 
-        $refreshIndexRequestClassName = $this->getRequestClass('Index\\RefreshIndexRequest');
-        $refreshIndexRequest = new $refreshIndexRequestClassName($index, null, $this->getSerializer());
+        $refreshIndexRequest = $this->requestFactory->create(
+            'Index\\RefreshIndexRequest',
+            $this->serverInfo->version,
+            $index,
+            null,
+            $this->getSerializer()
+        );
 
         return $client->send($refreshIndexRequest);
     }
@@ -371,20 +383,6 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
     private function getQueryClass($className)
     {
         $namespace = 'Elastification\\BackupRestore\\Repository\\ElasticQuery\\V%sx\\%s';
-
-        return $this->generateClassName($namespace, $className);
-    }
-
-    /**
-     * Generates a fully qualified classname for requests of elastification
-     *
-     * @param string $className
-     * @return string
-     * @author Daniel Wendlandt
-     */
-    private function getRequestClass($className)
-    {
-        $namespace = 'Elastification\\Client\\Request\\V%sx\\%s';
 
         return $this->generateClassName($namespace, $className);
     }
