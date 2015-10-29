@@ -10,19 +10,7 @@ namespace Elastification\BackupRestore\BusinessCase;
 
 use Elastification\BackupRestore\Entity\BackupJob;
 use Elastification\BackupRestore\Entity\JobStats;
-use Elastification\BackupRestore\Entity\Mappings\Index;
-use Elastification\BackupRestore\Entity\Mappings\Type;
-use Elastification\BackupRestore\Helper\DataSizeHelper;
-use Elastification\BackupRestore\Helper\TimeTakenHelper;
-use Elastification\BackupRestore\Helper\VersionHelper;
-use Elastification\BackupRestore\Repository\ElasticsearchRepository;
-use Elastification\BackupRestore\Repository\ElasticsearchRepositoryInterface;
-use Elastification\BackupRestore\Repository\FilesystemRepository;
-use Elastification\BackupRestore\Repository\FilesystemRepositoryInterface;
-use Elastification\Client\Exception\ClientException;
-use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Yaml\Dumper;
 
 interface BackupBusinessCaseInterface
 {

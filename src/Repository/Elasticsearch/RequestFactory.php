@@ -12,6 +12,18 @@ use Elastification\Client\Serializer\SerializerInterface;
 
 class RequestFactory implements RequestFactoryInterface
 {
+    private $namespace = 'Elastification\\Client\\Request\\V%sx\\%s';
+
+    /**
+     * @param null|string $namespacePattern
+     */
+    public function __construct($namespacePattern = null)
+    {
+        if(null !== $namespacePattern) {
+            $this->namespace = $namespacePattern;
+        }
+    }
+
     /**
      * @inheritdoc
      */
@@ -23,7 +35,7 @@ class RequestFactory implements RequestFactoryInterface
     }
 
     /**
-     * Generates a fully qualified classname for requests of elastification
+     * Generates a class with correct version path and namespace
      *
      * @param string $className
      * @return string
@@ -31,23 +43,8 @@ class RequestFactory implements RequestFactoryInterface
      */
     private function getRequestClass($className, $elasticsearchVersion)
     {
-        $namespace = 'Elastification\\Client\\Request\\V%sx\\%s';
-
-        return $this->generateClassName($namespace, $className, $elasticsearchVersion);
-    }
-
-    /**
-     * Generates a class with correct version path and namespace
-     *
-     * @param string $namespace
-     * @param string $className
-     * @return string
-     * @author Daniel Wendlandt
-     */
-    private function generateClassName($namespace, $className, $elasticsearchVersion)
-    {
         $version = explode('.', $elasticsearchVersion);
 
-        return sprintf($namespace, $version[0], $className);
+        return sprintf($this->namespace, $version[0], $className);
     }
 }

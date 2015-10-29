@@ -401,7 +401,7 @@ class RestoreBusinessCase
     }
 
     /**
-     * Gets the content for the resultline
+     * Gets the content for the result line
      *
      * @param JobStats $jobStats
      * @return string

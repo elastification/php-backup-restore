@@ -83,7 +83,7 @@ class Index
         if(!isset($this->types[$type])) {
             return 0;
         }
-        /** @var Type $indexObj */
+        /** @var Type $typeObj */
         $typeObj = $this->types[$type];
 
         return $typeObj->getDocsInType();
