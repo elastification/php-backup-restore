@@ -124,7 +124,7 @@ class BackupRunCommand extends Command
             if($this->hasAllIndices($indices)) {
                 $indices = array();
             }
-            $backupJob->getMappings()->processIndices($indices);
+            $backupJob->getMappings()->reduceIndices($indices);
         }
 
 

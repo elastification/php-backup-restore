@@ -82,7 +82,7 @@ class BackupBusinessCase implements BackupBusinessCaseInterface
         $backupJob->setMappings($this->elastic->getAllMappings($host, $port));
 
         if(!empty($mappings)) {
-            $backupJob->getMappings()->processIndices($mappings);
+            $backupJob->getMappings()->reduceIndices($mappings);
         }
 
         if(!VersionHelper::isVersionAllowed($backupJob->getServerInfo()->version)) {

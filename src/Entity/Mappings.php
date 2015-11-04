@@ -75,7 +75,7 @@ class Mappings
      * @param array $indicesTypes
      * @author Daniel Wendlandt
      */
-    public function processIndices(array $indicesTypes)
+    public function reduceIndices(array $indicesTypes)
     {
         if(empty($indicesTypes)) {
             return;
