@@ -1,0 +1,25 @@
+{
+  "output": "elastic-backup-restore-@git-version@.phar",
+  "chmod": "0755",
+  "compactors": [
+    "Herrera\\Box\\Compactor\\Json",
+    "Herrera\\Box\\Compactor\\Php"
+  ],
+  "extract": false,
+  "main": "elastic-backup-restore",
+  "finder": [
+    {
+      "name": "*.*",
+      "exclude": ["Tests"],
+      "in": "vendor"
+    },
+    {
+      "name": "*.*",
+      "in": "src"
+    }
+  ],
+  "git-commit": "git-commit",
+  "git-version": "git-version",
+  "stub": true,
+  "web": false
+}

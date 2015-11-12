@@ -121,6 +121,25 @@ The restore task will ask you, if your not using a config file, to store your cu
 
 ---
 
+## Build a version
+
+For building a new phar package it is required to install [box](http://box-project.github.io/box2/) on your machine. 
+
+To build a new production version it is better to run
+
+```
+    composer install --nod-dev
+```
+
+This will reinstall all dev packages.
+After that you can run
+ 
+```
+    box build
+```
+
+---
+
 ## Ideas
 
 - Option for ip's will not work here. It should also be a config per index/type entry. Like an array of id's

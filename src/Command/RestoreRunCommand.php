@@ -160,7 +160,7 @@ class RestoreRunCommand extends Command
     private function askForProceeding(InputInterface $input, OutputInterface $output)
     {
         $helper = $this->getHelper('question');
-        $question = new ConfirmationQuestion('<info>Do want to proceed with the backup?</info> [<comment>y/n</comment>]:');
+        $question = new ConfirmationQuestion('<info>Do want to proceed with the restore?</info> [<comment>y/n</comment>]:');
 
         return $helper->ask($input, $output, $question);
     }
