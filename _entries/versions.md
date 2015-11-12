@@ -6,11 +6,21 @@ title: Versions
 number: 5000
 ---
 
-**Current Version: 0.1.1**
+**Current Version: 0.1.2**
 
-[[Download]](http://elastification.github.io/php-backup-restore/downloads/elastic-backup-restore.phar) -  Created at: 2015-10-06
+[[Download]](http://elastification.github.io/php-backup-restore/downloads/elastic-backup-restore.phar) -  Created at: 2015-11-12
 
 ---
+
+**Version 0.1.2**
+
+[[Download]](http://elastification.github.io/php-backup-restore/downloads/elastic-backup-restore-0.1.1.phar) - Created at: 2015-11-12
+
+- Fixed some wordings/typos
+- Fixed latest symlink creation
+- Refactored to requestFactory.
+- Wrote multiple unit tests for repositories and started tests for entities
+- Added box file for easy package building
 
 **Version 0.1.1**
 
@@ -19,7 +29,7 @@ number: 5000
 - Fixed backup business case and removed counting docs for being able to store data
 - Fixed restore meta data folder structure bug
 - Added optional parameter in some filesystem repository functions, for better testing
-- Fixed bug in filesysten repository constructor
+- Fixed bug in filesystem repository constructor
 
 
 **Version 0.1.0**
