@@ -82,7 +82,7 @@ class Mappings
         }
 
         //reformat non string based array
-        if(is_array($indicesTypes[0]) && isset($indicesTypes[0]['index']) && isset($indicesTypes[0]['index'])) {
+        if(is_array($indicesTypes[0]) && isset($indicesTypes[0]['index']) && isset($indicesTypes[0]['type'])) {
             $givenIndices = $indicesTypes;
             $indicesTypes = array();
 
@@ -101,7 +101,6 @@ class Mappings
              * @var Type $type
              */
             foreach($index->getTypes() as $typeIndex => $type) {
-
                 $name = $index->getName() . '/' . $type->getName();
 
                 if(!in_array($name, $indicesTypes)) {

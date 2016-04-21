@@ -151,4 +151,6 @@ After that you can run
 - command: backup:config should create a config file only and stores somewhere
 - WRITING TESTS !!!
 - restore: restore only partial types from backups not all.
+- self-update: build a self update command
+- version: build a version command for getting the version, or reading it from composer json
 

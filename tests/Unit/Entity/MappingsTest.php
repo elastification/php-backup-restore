@@ -105,39 +105,46 @@ class MappingsTest extends \PHPUnit_Framework_TestCase
         $this->mappings->reduceIndices([]);
         $this->assertSame(1, $this->mappings->countIndices());
     }
-//
-//    public function testsGetIndicesEmpty()
-//    {
-//        $this->assertEmpty($this->stats->getIndices());
-//    }
-//
-//    public function testsGetDocCountEmpty()
-//    {
-//        $this->assertSame(0, $this->stats->getDocCount(self::INDEX, self::TYPE));
-//    }
-//
-//    public function testDocCountWithIndexOnly()
-//    {
-//        $count = 77;
-//        $this->index->expects($this->once())->method('getName')->willReturn(self::INDEX);
-//        $this->index->expects($this->once())->method('getDocsInIndex')->willReturn($count);
-//        $this->stats->addIndex($this->index);
-//
-//        $result = $this->stats->getDocCount(self::INDEX);
-//        $this->assertSame($count, $result);
-//
-//    }
-//
-//    public function testDocCountWithIndexAndType()
-//    {
-//        $count = 11;
-//        $this->index->expects($this->once())->method('getName')->willReturn(self::INDEX);
-//        $this->index->expects($this->never())->method('getDocsInIndex');
-//        $this->index->expects($this->once())->method('getDocsInType')->with(self::TYPE)->willReturn($count);
-//        $this->stats->addIndex($this->index);
-//
-//        $result = $this->stats->getDocCount(self::INDEX, self::TYPE);
-//        $this->assertSame($count, $result);
-//    }
 
+    public function testReduceIndicesGivenArray()
+    {
+        $indices = [['index' => self::INDEX, 'type' => self::TYPE]];
+
+        $type = $this->getMockBuilder('\Elastification\BackupRestore\Entity\Mappings\Type')
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $type->expects($this->once())->method('getName')->willReturn(self::TYPE);
+
+        $this->index->expects($this->once())->method('getName')->willReturn(self::INDEX);
+        $this->index->expects($this->once())->method('getTypes')->willReturn([self::TYPE => $type]);
+        $this->index->expects($this->once())->method('countTypes')->willReturn(0);
+
+        $this->mappings->addIndex($this->index);
+
+        $this->assertSame(1, $this->mappings->countIndices());
+        $this->mappings->reduceIndices($indices);
+        $this->assertSame(0, $this->mappings->countIndices());
+    }
+
+    public function testReduceIndicesGivenArrayWithoutAnyMatch()
+    {
+        $indices = [['index' => self::INDEX . '-fake', 'type' => 'notExisting']];
+
+        $type = $this->getMockBuilder('\Elastification\BackupRestore\Entity\Mappings\Type')
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $type->expects($this->once())->method('getName')->willReturn(self::TYPE);
+
+        $this->index->expects($this->once())->method('getName')->willReturn(self::INDEX);
+        $this->index->expects($this->once())->method('getTypes')->willReturn([self::TYPE => $type]);
+        $this->index->expects($this->once())->method('countTypes')->willReturn(0);
+
+        $this->mappings->addIndex($this->index);
+
+        $this->assertSame(1, $this->mappings->countIndices());
+        $this->mappings->reduceIndices($indices);
+        $this->assertSame(0, $this->mappings->countIndices());
+    }
 }
