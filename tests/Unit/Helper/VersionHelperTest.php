@@ -17,7 +17,7 @@ class VersionHelperTest extends \PHPUnit_Framework_TestCase
     {
         $this->assertTrue(VersionHelper::isVersionAllowed('1.7.3'));
         $this->assertFalse(VersionHelper::isVersionAllowed('0.90.3'));
-        $this->assertFalse(VersionHelper::isVersionAllowed('2.0.3'));
+        $this->assertTrue(VersionHelper::isVersionAllowed('2.0.3'));
         $this->assertFalse(VersionHelper::isVersionAllowed('v1.0.3'));
     }
 

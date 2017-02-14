@@ -12,6 +12,6 @@ abstract class VersionHelper
 {
     public static function isVersionAllowed($version)
     {
-        return preg_match('/^(1).*/', $version) > 0;
+        return preg_match('/^(1|2).*/', $version) > 0;
     }
 }

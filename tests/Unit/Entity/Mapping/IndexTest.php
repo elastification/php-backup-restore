@@ -6,7 +6,7 @@
  * Time: 08:07
  */
 
-namespace Elastification\BackupRestore\Tests\Unit\Entity\Mapping;
+namespace Elastification\BackupRestore\Tests\Unit\Entity\IndexTypeStats;
 
 
 use Elastification\BackupRestore\Entity\Mappings\Index;

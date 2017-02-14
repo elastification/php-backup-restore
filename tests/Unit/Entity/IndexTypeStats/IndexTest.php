@@ -10,7 +10,7 @@ namespace Elastification\BackupRestore\Tests\Unit\Entity\Mapping;
 
 use Elastification\BackupRestore\Entity\IndexTypeStats\Index;
 
-class TypeTest extends \PHPUnit_Framework_TestCase
+class IndexTest extends \PHPUnit_Framework_TestCase
 {
 
     /**

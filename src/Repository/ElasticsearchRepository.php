@@ -354,6 +354,55 @@ class ElasticsearchRepository extends AbstractElasticsearchRepository implements
     }
 
     /**
+     * @param $index
+     * @param $host
+     * @param int $port
+     * @return \Elastification\Client\Response\ResponseInterface
+     * @author Dmitry Grachikov
+     */
+    public function getIndexSettings($index, $host, $port = 9200)
+    {
+        $this->checkServerInfo($host, $port);
+        $client = $this->getClient($host, $port);
+
+        $request = $this->requestFactory->create(
+            'Index\\IndexSettingsRequest',
+            $this->serverInfo->version,
+            $index,
+            null,
+            $this->getSerializer()
+        );
+
+        return $client->send($request);
+    }
+
+    /**
+     * @param $index
+     * @param array $settings
+     * @param $host
+     * @param int $port
+     * @return \Elastification\Client\Response\ResponseInterface
+     * @author Dmitry Grachikov
+     */
+    public function updateIndexSettings($index, array $settings, $host, $port = 9200)
+    {
+        $this->checkServerInfo($host, $port);
+        $client = $this->getClient($host, $port);
+
+        $request = $this->requestFactory->create(
+            'Index\\UpdateIndexSettingsRequest',
+            $this->serverInfo->version,
+            $index,
+            null,
+            $this->getSerializer()
+        );
+
+        $request->setBody($settings);
+
+        return $client->send($request);
+    }
+
+    /**
      * Checks if server info is set. If not it fetches the server info again.
      * Also a verison check is done, if elasticsearch version is supported by this software
      *

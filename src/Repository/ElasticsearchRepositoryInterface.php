@@ -134,5 +134,24 @@ interface ElasticsearchRepositoryInterface
      * @author Daniel Wendlandt
      */
     public function refreshIndex($index, $host, $port = 9200);
+
+    /**
+     * @param $index
+     * @param $host
+     * @param int $port
+     * @return \Elastification\Client\Response\ResponseInterface
+     * @author Dmitry Grachikov
+     */
+    public function getIndexSettings($index, $host, $port = 9200);
+
+    /**
+     * @param $index
+     * @param array $settings
+     * @param $host
+     * @param int $port
+     * @return \Elastification\Client\Response\ResponseInterface
+     * @author Dmitry Grachikov
+     */
+    public function updateIndexSettings($index, array $settings, $host, $port = 9200);
 }
 
