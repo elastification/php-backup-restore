@@ -248,19 +248,6 @@ class RestoreBusinessCase
         foreach($job->getMappings()->getIndices() as $index) {
             $toIndex = null;
 
-            $indexSettingsResponse = $this->elastic->getIndexSettings($index->getName(), $job->getHost(), $job->getPort());
-            $indexSettings = $indexSettingsResponse->getData()[$index->getName()];
-            $indexSettings = isset($indexSettings['settings']) ? $indexSettings['settings'] : [];
-            $refreshInterval = isset($indexSettings['refresh_interval']) ? $indexSettings['refresh_interval'] : '1s';
-
-            $this->elastic->updateIndexSettings(
-                $index->getName(),
-                [ 'index.refresh_interval' => -1 ],
-                $job->getHost(),
-                $job->getPort()
-            );
-
-
             /** @var Type $type */
             foreach($index->getTypes() as $type) {
                 /** @var Finder $finder */
@@ -287,6 +274,18 @@ class RestoreBusinessCase
                     throw new \Exception(
                         'Mapping action missing for "' . $index->getName() . '/' . $type->getName() . '"');
                 }
+
+                $indexSettingsResponse = $this->elastic->getIndexSettings($mappingAction->getTargetIndex(), $job->getHost(), $job->getPort());
+                $indexSettings = $indexSettingsResponse->getData()[$mappingAction->getTargetIndex()];
+                $indexSettings = isset($indexSettings['settings']) ? $indexSettings['settings'] : [];
+                $refreshInterval = isset($indexSettings['refresh_interval']) ? $indexSettings['refresh_interval'] : '1s';
+
+                $this->elastic->updateIndexSettings(
+                    $mappingAction->getTargetIndex(),
+                    [ 'index.refresh_interval' => -1 ],
+                    $job->getHost(),
+                    $job->getPort()
+                );
 
                 $docCount = $finder->count();
 
@@ -321,16 +320,16 @@ class RestoreBusinessCase
                 $progress->finish();
                 $output->writeln(PHP_EOL);
                 $toIndex = $mappingAction->getTargetIndex();
+
+                $this->elastic->updateIndexSettings(
+                    $mappingAction->getTargetIndex(),
+                    [ 'index.refresh_interval' => $refreshInterval ],
+                    $job->getHost(),
+                    $job->getPort()
+                );
             }
 
             $this->elastic->refreshIndex($toIndex, $job->getHost(), $job->getPort());
-
-            $this->elastic->updateIndexSettings(
-                $index->getName(),
-                [ 'index.refresh_interval' => $refreshInterval ],
-                $job->getHost(),
-                $job->getPort()
-            );
         }
 
         //add aggregated to storedStats for comparing later
